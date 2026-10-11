@@ -78,6 +78,7 @@ app/
     posts.py                 /api/enrich /preview /publish /publish/{id}/retry /status/{id} /history
   static/
     index.html  style.css  app.js     单页前端，无构建链
+    i18n.js                  界面中英切换：中文原文即 key，EN 表 + 后端报错的正则翻译；帮助抽屉中英各写一份（data-lang）
   hashpw.py                  命令行：生成密码哈希
 tests/
   conftest.py                公共夹具：FakeGitHub（内存版 GitHub）、publisher、client、login()
@@ -112,7 +113,8 @@ deploy/                      nginx 示例、服务器运维脚本
 | 粘贴富文本转 Markdown 不对 | `static/html2md.js`（htmlToMarkdown / looksRich），粘贴处理在 `static/app.js` 的 paste 监听 | 在浏览器里用飞书 / 公众号 / 网页的真实复制内容验证 |
 | AI 补全 / 中转站 | `services/ai.py` → `integrations/claude.py` 或 `openai_compat.py` | `tests/integrations/test_ai_providers.py` |
 | 页面样式 / 交互 | `static/style.css` / `static/app.js`；登录页背景动画在 `static/fx.js`（canvas，系统开了「减少动态效果」不启动） | |
-| 帮助抽屉（教程、快捷键、常见问题） | `static/index.html` 的 `#dlgHelp` | |
+| 帮助抽屉（教程、快捷键、常见问题） | `static/index.html` 的 `#dlgHelp`（中英两份：`data-lang="zh"` / `"en"`，改一份记得改另一份） | |
+| 加 / 改界面文案、英文漏翻 | 前端写 `t("中文")`，英文加到 `static/i18n.js` 的 `EN`；后端新报错带变量的加到 `PATTERNS` | 英文界面走一遍看有没有残留中文 |
 | 环境变量 | `core/config.py:get_settings` | `.env.example` 同步 |
 
 ## 4. 排障地图

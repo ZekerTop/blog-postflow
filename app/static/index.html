@@ -34,6 +34,7 @@
 
 <!-- ============ 登录 / 首次设置 ============ -->
 <div id="auth" class="stage hidden">
+  <button type="button" class="lang-btn stage-lang" data-lang-toggle data-i18n="off"></button>
   <div class="aurora"><i></i><i></i><i></i></div>
   <div class="gridlines"></div>
   <canvas id="fx" aria-hidden="true"></canvas>
@@ -90,6 +91,7 @@
       </nav>
       <div class="top-actions">
         <button class="icon-btn" id="btnHelp" title="使用教程与常见问题（?）" aria-label="帮助"><svg><use href="#i-help"/></svg></button>
+        <button class="icon-btn lang-btn" data-lang-toggle data-i18n="off"></button>
         <button class="icon-btn" id="btnTheme" title="主题：跟随系统" aria-label="切换主题"><svg><use href="#i-auto"/></svg></button>
         <span class="sep"></span>
         <button class="icon-btn" id="btnLogout" title="退出登录" aria-label="退出登录"><svg><use href="#i-logout"/></svg></button>
@@ -106,7 +108,7 @@
           <div class="actions"><button class="btn ghost sm" id="btnRefresh"><svg><use href="#i-refresh"/></svg>刷新状态</button>
             <button class="icon-btn" id="btnCloseResult" aria-label="收起"><svg><use href="#i-close"/></svg></button></div>
         </div>
-        <div id="resultBody" class="rows"></div>
+        <div id="resultBody" class="rows" data-i18n="off"></div>
       </div>
 
       <div id="editingBar" class="editing-bar hidden">
@@ -153,7 +155,7 @@
 
           <div class="card">
             <div class="card-head"><h2>发布到</h2><a class="link sm" href="#settings">管理博客</a></div>
-            <div id="targets" class="targets"></div>
+            <div id="targets" class="targets" data-i18n="off"></div>
             <p id="noBlogs" class="empty hidden">还没有博客。<a class="link" href="#settings">去添加 →</a></p>
             <label class="switch"><input type="checkbox" id="overwrite"><span class="track"></span><span>目标文件已存在时覆盖</span></label>
           </div>
@@ -173,14 +175,14 @@
         <label class="search"><svg><use href="#i-search"/></svg><input type="text" id="artSearch" placeholder="搜索文件名或目录"></label>
         <button class="btn secondary" id="btnArtRefresh" title="重新读取仓库"><svg><use href="#i-refresh"/></svg></button>
       </div>
-      <div class="card flush"><div id="artBody" class="rows"></div></div>
+      <div class="card flush"><div id="artBody" class="rows" data-i18n="off"></div></div>
       <p class="muted art-count" id="artCount"></p>
     </section>
 
     <section id="view-history" class="view hidden">
       <div class="page-head"><h1>发布历史</h1><p class="muted">最近 50 次。失败的可以重发，后来新加的博客可以补发，也可以载入编辑后再发。</p></div>
       <div class="toolbar"><label class="search"><svg><use href="#i-search"/></svg><input type="text" id="histSearch" placeholder="搜索标题或 slug"></label></div>
-      <div class="card flush"><div id="historyBody" class="rows"></div></div>
+      <div class="card flush"><div id="historyBody" class="rows" data-i18n="off"></div></div>
     </section>
 
     <!-- 设置 -->
@@ -192,7 +194,7 @@
           <div><h2>博客</h2><p class="muted">每个博客一个源码仓库，主题预设决定生成的 Markdown 格式。</p></div>
           <button class="btn secondary" id="btnNewBlog"><svg><use href="#i-plus"/></svg>添加博客</button>
         </div>
-        <div id="blogList" class="rows"></div>
+        <div id="blogList" class="rows" data-i18n="off"></div>
       </div>
 
       <div class="card">
@@ -241,8 +243,8 @@
 <dialog id="dlgPreview" class="dlg wide">
   <div class="dlg-head"><div><h2>预览</h2><p class="muted" id="previewSub"></p></div>
     <button class="icon-btn" data-close aria-label="关闭"><svg><use href="#i-close"/></svg></button></div>
-  <div class="tabs" id="previewTabs"></div>
-  <div class="preview-meta" id="previewMeta"></div>
+  <div class="tabs" id="previewTabs" data-i18n="off"></div>
+  <div class="preview-meta" id="previewMeta" data-i18n="off"></div>
   <pre class="code" id="previewBody"></pre>
   <div class="dlg-foot"><button class="btn ghost" data-close>关闭</button>
     <button class="btn primary" id="btnPublishFromPreview"><svg><use href="#i-send"/></svg>确认发布</button></div>
@@ -297,42 +299,84 @@
   <div class="tabs" id="helpTabs"><button data-t="start" class="on">快速上手</button><button data-t="keys">快捷键</button><button data-t="faq">常见问题</button></div>
   <div class="drawer-body">
     <div data-panel="start">
-      <ol class="steps">
-        <li><b>配置一次</b><p>「设置」里填 GitHub Token（fine-grained，目标仓库 Contents 读写 + Actions 只读），再添加博客：选主题预设，填仓库、分支、文章目录。点「检查连接」确认能写。</p></li>
-        <li><b>粘贴正文</b><p>把公众号文章的 Markdown 粘进「正文」，或直接把 .md 文件拖进来。正文会自动存为本地草稿，刷新不丢。</p></li>
-        <li><b>补全元数据</b><p>先填标题（你定的标题，AI 不会改），再点「AI 生成网址、描述、关键词」：网址用英文提炼标题的核心主题（如 python-314-free-threading-template-strings-upgrade），描述是 100–130 字的中国搜索版，关键词 15–30 个覆盖同义说法和长尾问题；标签、分类自己填。</p></li>
-        <li><b>预览</b><p>按博客分标签看最终生成的 Markdown 和落盘路径；目标文件已存在会提示，需要打开「覆盖」。</p></li>
-        <li><b>发布</b><p>一次提交到所有勾选的博客，各仓库的 GitHub Actions 自动构建部署。结果卡片会自动刷新，直到部署完成。</p></li>
-      </ol>
-      <p class="help-note">新博客先把分支填 <code>postflow-test</code> 试发，确认内容没问题再改回 <code>main</code>，不会影响线上站点。</p>
+      <div data-lang="zh">
+        <ol class="steps">
+          <li><b>配置一次</b><p>「设置」里填 GitHub Token（fine-grained，目标仓库 Contents 读写 + Actions 只读），再添加博客：选主题预设，填仓库、分支、文章目录。点「检查连接」确认能写。</p></li>
+          <li><b>粘贴正文</b><p>把公众号文章的 Markdown 粘进「正文」，或直接把 .md 文件拖进来。正文会自动存为本地草稿，刷新不丢。</p></li>
+          <li><b>补全元数据</b><p>先填标题（你定的标题，AI 不会改），再点「AI 生成网址、描述、关键词」：网址用英文提炼标题的核心主题（如 python-314-free-threading-template-strings-upgrade），描述是 100–130 字的中国搜索版，关键词 15–30 个覆盖同义说法和长尾问题；标签、分类自己填。</p></li>
+          <li><b>预览</b><p>按博客分标签看最终生成的 Markdown 和落盘路径；目标文件已存在会提示，需要打开「覆盖」。</p></li>
+          <li><b>发布</b><p>一次提交到所有勾选的博客，各仓库的 GitHub Actions 自动构建部署。结果卡片会自动刷新，直到部署完成。</p></li>
+        </ol>
+        <p class="help-note">新博客先把分支填 <code>postflow-test</code> 试发，确认内容没问题再改回 <code>main</code>，不会影响线上站点。</p>
+      </div>
+      <div data-lang="en">
+        <ol class="steps">
+          <li><b>Set up once</b><p>In Settings, add a GitHub token (fine-grained: Contents read/write + Actions read-only on the target repos), then add your blogs: pick a theme preset and fill in repo, branch and posts folder. Click “Check” to confirm Postflow can write.</p></li>
+          <li><b>Paste the body</b><p>Paste your post into “Body”, or drag a .md file in. It autosaves as a local draft, so a refresh won't lose it.</p></li>
+          <li><b>Fill in metadata</b><p>Enter the title yourself (AI never changes it), then click “AI: slug &amp; SEO”. The slug distills the title's topic into English (e.g. python-314-free-threading-template-strings-upgrade), the description is 100–130 characters for search snippets, and keywords cover 15–30 synonyms and long-tail questions. Tags and categories are yours to fill.</p></li>
+          <li><b>Preview</b><p>See the exact Markdown and file path for each blog. If the file already exists you'll be told, and need to turn on “Overwrite”.</p></li>
+          <li><b>Publish</b><p>One commit per selected blog; each repo's GitHub Actions builds and deploys. The result card refreshes itself until the deploy finishes.</p></li>
+        </ol>
+        <p class="help-note">For a new blog, set the branch to <code>postflow-test</code> first. Once the output looks right, switch back to <code>main</code>. The live site isn't touched.</p>
+      </div>
     </div>
     <div data-panel="keys" class="hidden">
-      <table class="keys">
-        <tr><td>预览</td><td><kbd class="mod">⌘</kbd> <kbd>Enter</kbd></td></tr>
-        <tr><td>发布</td><td><kbd class="mod">⌘</kbd> <kbd>Shift</kbd> <kbd>Enter</kbd></td></tr>
-        <tr><td>按纯文本粘贴（不转换格式）</td><td><kbd class="mod">⌘</kbd> <kbd>Shift</kbd> <kbd>V</kbd></td></tr>
-        <tr><td>打开帮助</td><td><kbd>?</kbd></td></tr>
-        <tr><td>关闭弹窗</td><td><kbd>Esc</kbd></td></tr>
-      </table>
+      <div data-lang="zh">
+        <table class="keys">
+          <tr><td>预览</td><td><kbd class="mod">⌘</kbd> <kbd>Enter</kbd></td></tr>
+          <tr><td>发布</td><td><kbd class="mod">⌘</kbd> <kbd>Shift</kbd> <kbd>Enter</kbd></td></tr>
+          <tr><td>按纯文本粘贴（不转换格式）</td><td><kbd class="mod">⌘</kbd> <kbd>Shift</kbd> <kbd>V</kbd></td></tr>
+          <tr><td>打开帮助</td><td><kbd>?</kbd></td></tr>
+          <tr><td>关闭弹窗</td><td><kbd>Esc</kbd></td></tr>
+        </table>
+    
+      </div>
+      <div data-lang="en">
+        <table class="keys">
+          <tr><td>Preview</td><td><kbd class="mod">⌘</kbd> <kbd>Enter</kbd></td></tr>
+          <tr><td>Publish</td><td><kbd class="mod">⌘</kbd> <kbd>Shift</kbd> <kbd>Enter</kbd></td></tr>
+          <tr><td>Paste as plain text (no conversion)</td><td><kbd class="mod">⌘</kbd> <kbd>Shift</kbd> <kbd>V</kbd></td></tr>
+          <tr><td>Open help</td><td><kbd>?</kbd></td></tr>
+          <tr><td>Close dialog</td><td><kbd>Esc</kbd></td></tr>
+        </table>
+      </div>
     </div>
     <div data-panel="faq" class="faq hidden">
-      <details><summary>发布失败：还没配置 GitHub Token</summary><p>去「设置 → GitHub」填 Token 并保存。Token 只存在服务器本地数据库，页面上只显示末 4 位。</p></details>
-      <details><summary>GitHub 401 / 403 / 404</summary><p>401 是 Token 无效或过期；403 是 Token 没有这个仓库的写权限；404 多半是仓库名写错，或 fine-grained Token 没勾选这个仓库。在「设置」里点该博客的「检查连接」可以看到具体原因。</p></details>
-      <details><summary>三个博客在不同 GitHub 账号，Token 怎么配？</summary><p>每个博客是独立的仓库，可以属于不同账号。fine-grained Token 只能授权给一个账号下的仓库，所以：多数博客所在账号的 Token 填在「设置 → 密钥」作为全局默认；其他账号下的博客，编辑该博客，在「专用 GitHub Token」里填那个账号的 Token。检查连接、预览、发布、查部署状态都会自动用对应的 Token。</p></details>
-      <details><summary>从飞书、公众号复制的内容怎么变成 Markdown？</summary><p>直接复制、粘贴进「正文」就行：标题、加粗、列表、引用、代码块、表格、链接、图片会自动转成 Markdown，转错了按 ⌘Z 撤销；想原样粘贴纯文本按 ⌘⇧V。注意：飞书文档里的图片链接要登录才能看，公众号图片有防盗链，这两种图片发布前要换成图床链接，粘贴时会提醒。</p></details>
-      <details><summary>以前发的文章怎么改、怎么删？</summary><p>顶部「文章」页会列出博客仓库里的全部文章。点「编辑」载入到写作页，改完发布会写回原文件，只改你动过的部分，没动的字段（包括自定义字段）原样保留。点「删除」会从仓库删掉这篇，并在同一次提交里登记到放行名单，部署不会被 SEO 守门拦下。已被收录的文章尽量只改不删，删了老链接会 404。</p></details>
-      <details><summary>提示「目标文件已存在」</summary><p>同一个 slug 已经发过。确认要更新就打开「目标文件已存在时覆盖」再发；不想覆盖就换一个 slug。</p></details>
-      <details><summary>已提交，但网站没更新</summary><p>提交后由各仓库的 GitHub Actions 构建部署，通常 1～3 分钟。结果卡片里点 Actions 链接可以看日志；失败多是 workflow 或部署密钥的问题，不是本服务。</p></details>
-      <details><summary>生成的 front matter 和我的主题对不上</summary><p>编辑该博客 → 换一个更接近的主题预设；还有出入就在「高级 → 覆盖预设」里写 YAML，比如 <code>date_format: '%Y-%m-%d'</code>，或用 <code>fields</code> 重新定义字段（取值写 <code>$title</code>、<code>$tags</code>、<code>$cover</code> 等）。改完先预览。</p></details>
-      <details><summary>AI 用中转站怎么配？</summary><p>「设置 → AI 接口」：中转站是 Anthropic 格式（如 Claude Code 用的那种）就选「Anthropic 格式」，接口地址填中转站给的地址；是 OpenAI 格式（DeepSeek、Kimi、OpenRouter、各种 API 聚合）就选「OpenAI 兼容格式」，地址一般填到 <code>/v1</code>。填好 Key 和模型名，先点「测试连接」，通过了再保存。</p></details>
-      <details><summary>AI 生成失败</summary><p>先去「设置 → AI 接口」点「测试连接」看具体原因：401 是 Key 不对，404 多半是接口地址或模型名不对，429 是额度或限流。AI 只是辅助，失败了手动填写一样能发布。</p></details>
-      <details><summary>后来新加了博客，旧文章怎么补发？</summary><p>「历史」里每条记录会出现「补发 N 个」，用当时保存的内容生成并提交。想先改内容，就点「载入编辑」。</p></details>
-      <details><summary>草稿存在哪？</summary><p>只存在当前浏览器本地。换设备、清除网站数据都会丢失，重要文章请自己留底。</p></details>
+      <div data-lang="zh">
+        <details><summary>发布失败：还没配置 GitHub Token</summary><p>去「设置 → GitHub」填 Token 并保存。Token 只存在服务器本地数据库，页面上只显示末 4 位。</p></details>
+        <details><summary>GitHub 401 / 403 / 404</summary><p>401 是 Token 无效或过期；403 是 Token 没有这个仓库的写权限；404 多半是仓库名写错，或 fine-grained Token 没勾选这个仓库。在「设置」里点该博客的「检查连接」可以看到具体原因。</p></details>
+        <details><summary>三个博客在不同 GitHub 账号，Token 怎么配？</summary><p>每个博客是独立的仓库，可以属于不同账号。fine-grained Token 只能授权给一个账号下的仓库，所以：多数博客所在账号的 Token 填在「设置 → 密钥」作为全局默认；其他账号下的博客，编辑该博客，在「专用 GitHub Token」里填那个账号的 Token。检查连接、预览、发布、查部署状态都会自动用对应的 Token。</p></details>
+        <details><summary>从飞书、公众号复制的内容怎么变成 Markdown？</summary><p>直接复制、粘贴进「正文」就行：标题、加粗、列表、引用、代码块、表格、链接、图片会自动转成 Markdown，转错了按 ⌘Z 撤销；想原样粘贴纯文本按 ⌘⇧V。注意：飞书文档里的图片链接要登录才能看，公众号图片有防盗链，这两种图片发布前要换成图床链接，粘贴时会提醒。</p></details>
+        <details><summary>以前发的文章怎么改、怎么删？</summary><p>顶部「文章」页会列出博客仓库里的全部文章。点「编辑」载入到写作页，改完发布会写回原文件，只改你动过的部分，没动的字段（包括自定义字段）原样保留。点「删除」会从仓库删掉这篇，并在同一次提交里登记到放行名单，部署不会被 SEO 守门拦下。已被收录的文章尽量只改不删，删了老链接会 404。</p></details>
+        <details><summary>提示「目标文件已存在」</summary><p>同一个 slug 已经发过。确认要更新就打开「目标文件已存在时覆盖」再发；不想覆盖就换一个 slug。</p></details>
+        <details><summary>已提交，但网站没更新</summary><p>提交后由各仓库的 GitHub Actions 构建部署，通常 1～3 分钟。结果卡片里点 Actions 链接可以看日志；失败多是 workflow 或部署密钥的问题，不是本服务。</p></details>
+        <details><summary>生成的 front matter 和我的主题对不上</summary><p>编辑该博客 → 换一个更接近的主题预设；还有出入就在「高级 → 覆盖预设」里写 YAML，比如 <code>date_format: '%Y-%m-%d'</code>，或用 <code>fields</code> 重新定义字段（取值写 <code>$title</code>、<code>$tags</code>、<code>$cover</code> 等）。改完先预览。</p></details>
+        <details><summary>AI 用中转站怎么配？</summary><p>「设置 → AI 接口」：中转站是 Anthropic 格式（如 Claude Code 用的那种）就选「Anthropic 格式」，接口地址填中转站给的地址；是 OpenAI 格式（DeepSeek、Kimi、OpenRouter、各种 API 聚合）就选「OpenAI 兼容格式」，地址一般填到 <code>/v1</code>。填好 Key 和模型名，先点「测试连接」，通过了再保存。</p></details>
+        <details><summary>AI 生成失败</summary><p>先去「设置 → AI 接口」点「测试连接」看具体原因：401 是 Key 不对，404 多半是接口地址或模型名不对，429 是额度或限流。AI 只是辅助，失败了手动填写一样能发布。</p></details>
+        <details><summary>后来新加了博客，旧文章怎么补发？</summary><p>「历史」里每条记录会出现「补发 N 个」，用当时保存的内容生成并提交。想先改内容，就点「载入编辑」。</p></details>
+        <details><summary>草稿存在哪？</summary><p>只存在当前浏览器本地。换设备、清除网站数据都会丢失，重要文章请自己留底。</p></details>
+    
+      </div>
+      <div data-lang="en">
+        <details><summary>Publish failed: no GitHub token yet</summary><p>Go to Settings → GitHub, enter a token and save. It's stored only in the server's local database, and the page shows just the last 4 characters.</p></details>
+        <details><summary>GitHub 401 / 403 / 404</summary><p>401 means the token is invalid or expired; 403 means it can't write to this repo; 404 usually means a typo in the repo name, or the fine-grained token wasn't granted this repo. Click “Check” on the blog in Settings to see the exact cause.</p></details>
+        <details><summary>My blogs live under different GitHub accounts. Which token goes where?</summary><p>Each blog is its own repo and can belong to any account. A fine-grained token only covers one account's repos, so put the token for the account that holds most of your blogs in Settings → GitHub as the default. For a blog under another account, edit it and fill in “Blog-specific GitHub token”. Check, preview, publish and deploy status all use the right token automatically.</p></details>
+        <details><summary>How does content copied from Feishu or WeChat become Markdown?</summary><p>Just copy and paste into “Body”: headings, bold, lists, quotes, code blocks, tables, links and images are converted. Press ⌘Z to undo a bad conversion, or ⌘⇧V to paste plain text. Note: Feishu image links need a login and WeChat images block hotlinking, so replace them with hosted image URLs before publishing. You'll get a reminder when you paste.</p></details>
+        <details><summary>How do I edit or delete a post I published earlier?</summary><p>The “Posts” page lists every post in the blog repo. “Edit” loads it into the Write page; publishing writes back to the original file and changes only what you edited, keeping every untouched field (custom ones included). “Delete” removes the post from the repo and, in the same commit, adds it to the allowlist so the SEO guard doesn't block the deploy. Prefer editing indexed posts over deleting them: deleted links return 404.</p></details>
+        <details><summary>“The file already exists”</summary><p>A post with this slug was published before. To update it, turn on “Overwrite if the file already exists” and publish again; otherwise pick a different slug.</p></details>
+        <details><summary>Committed, but the site didn't update</summary><p>Each repo's GitHub Actions builds and deploys after the commit, usually within 1–3 minutes. Follow the Actions link on the result card for logs. Failures there are almost always the workflow or deploy keys, not Postflow.</p></details>
+        <details><summary>The generated front matter doesn't match my theme</summary><p>Edit the blog and pick a closer theme preset. If it's still off, write YAML under “Advanced → Preset overrides”, e.g. <code>date_format: '%Y-%m-%d'</code>, or redefine fields with <code>fields</code> (values like <code>$title</code>, <code>$tags</code>, <code>$cover</code>). Preview after changing.</p></details>
+        <details><summary>How do I use an API relay for AI?</summary><p>Settings → AI provider: for an Anthropic-format relay (like the ones Claude Code uses), choose “Anthropic format” and enter the relay's URL. For an OpenAI-format one (DeepSeek, Kimi, OpenRouter, aggregators), choose “OpenAI-compatible”; the URL usually ends in <code>/v1</code>. Enter the key and model name, click “Test connection”, and save once it passes.</p></details>
+        <details><summary>AI generation failed</summary><p>Go to Settings → AI provider and click “Test connection” for the exact cause: 401 is a bad key, 404 is usually a wrong URL or model name, 429 is quota or rate limiting. AI is optional: you can always fill the fields in by hand and publish.</p></details>
+        <details><summary>I added a blog later. How do I publish old posts to it?</summary><p>In History, each record shows “Publish to N more”, which regenerates and commits the post as it was saved. To change it first, click “Load to edit”.</p></details>
+        <details><summary>Where is my draft stored?</summary><p>Only in this browser. Switching devices or clearing site data loses it, so keep your own copy of anything important.</p></details>
+      </div>
     </div>
   </div>
 </dialog>
 
-<div id="toasts" class="toasts" aria-live="polite"></div>
+<div id="toasts" class="toasts" aria-live="polite" data-i18n="off"></div>
+<script src="/static/i18n.js"></script>
 <script src="/static/fx.js"></script>
 <script src="/static/html2md.js"></script>
 <script src="/static/app.js"></script>

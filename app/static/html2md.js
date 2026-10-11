@@ -4,6 +4,7 @@
   const BLOCK = new Set(["P", "DIV", "SECTION", "ARTICLE", "MAIN", "HEADER", "FOOTER", "ASIDE", "NAV", "FIGURE", "FIGCAPTION",
     "H1", "H2", "H3", "H4", "H5", "H6", "UL", "OL", "LI", "PRE", "BLOCKQUOTE", "TABLE", "HR", "DL", "DT", "DD", "BODY"]);
   const SKIP = new Set(["SCRIPT", "STYLE", "META", "LINK", "HEAD", "NOSCRIPT", "TEMPLATE", "TITLE", "SVG", "BUTTON", "INPUT"]);
+  const LOCAL_IMAGE = window.LOCAL_IMAGE_NOTE = "这里有一张粘贴进来的本地图片，请上传到图床后替换成链接";
   const CJK = /[　-〿㐀-鿿＀-￯]/;
 
   const isBlock = el => el.nodeType === 1 && BLOCK.has(el.tagName);
@@ -54,7 +55,7 @@
   function image(img) {
     const src = (img.getAttribute("data-src") || img.getAttribute("data-original") || img.getAttribute("src") || "").trim();
     if (!src) return "";
-    if (src.startsWith("data:")) return "<!-- 这里有一张粘贴进来的本地图片，请上传到图床后替换成链接 -->";
+    if (src.startsWith("data:")) return `<!-- ${window.i18n ? i18n.t(LOCAL_IMAGE) : LOCAL_IMAGE} -->`;
     const alt = (img.getAttribute("alt") || "").replace(/[\[\]]/g, "");
     return `![${alt}](${src})`;
   }

@@ -9,6 +9,7 @@ const store = {  // 浏览器本地存储只放草稿和界面偏好；隐私模
 const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform);
 const SLUG_RE = /^[0-9A-Za-z\u4e00-\u9fff]+(?:[-_][0-9A-Za-z\u4e00-\u9fff]+)*$/;  // 与后端 domain/post.py 一致
 const SLUG_RECOMMENDED = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const SLUG_EXAMPLE = "python-314-free-threading-template-strings-upgrade";
 const DRAFT_KEY = "pf-draft", DRAFT_FIELDS = ["body", "title", "slug", "date", "categories", "tags", "keywords", "description", "cover"];
 
 let csrf = "", blogs = [], adapters = [], currentId = null, previews = [], editingBlog = null, records = [];
@@ -20,10 +21,10 @@ async function api(path, body) {
   const opt = body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf }, body: JSON.stringify(body) };
   const r = await fetch(path, opt);
   const data = await r.json().catch(() => ({}));
-  if (r.status === 401 && !["/api/login", "/api/password"].includes(path)) { showAuth("login"); throw new Error("登录已过期，请重新登录"); }
+  if (r.status === 401 && !["/api/login", "/api/password"].includes(path)) { showAuth("login"); throw new Error(t("登录已过期，请重新登录")); }
   if (!r.ok) {
     const d = data.detail;
-    throw new Error(typeof d === "string" ? d : Array.isArray(d) ? d.map(e => `${e.loc?.slice(-1)[0] ?? ""} ${e.msg}`).join("；") : `请求失败（${r.status}）`);
+    throw new Error(typeof d === "string" ? t(d) : Array.isArray(d) ? d.map(e => `${e.loc?.slice(-1)[0] ?? ""} ${t(e.msg)}`).join(t("；")) : t("请求失败（{status}）", { status: r.status }));
   }
   return data;
 }
@@ -41,7 +42,7 @@ async function busy(btn, fn) {
   try { return await fn(); } finally { btn.classList.remove("loading"); btn.disabled = false; }
 }
 
-function confirmDialog({ title, text = "", ok = "确定", danger = false, overwrite = null }) {
+function confirmDialog({ title, text = "", ok = t("确定"), danger = false, overwrite = null }) {
   const d = $("dlgConfirm");
   $("confirmTitle").textContent = title; $("confirmText").textContent = text;
   $("confirmOk").textContent = ok; $("confirmOk").className = `btn ${danger ? "danger" : "primary"}`;
@@ -67,22 +68,41 @@ document.querySelectorAll(".reveal-pw").forEach(b => b.onclick = () => {
   const input = $(b.dataset.for), show = input.type === "password";
   input.type = show ? "text" : "password";
   b.innerHTML = icon(show ? "eye-off" : "eye");
-  b.setAttribute("aria-label", show ? "隐藏密码" : "显示密码");
+  b.setAttribute("aria-label", t(show ? "隐藏密码" : "显示密码"));
   input.focus();
 });
 
 /* ---------- 主题 ---------- */
 const THEMES = { auto: ["auto", "跟随系统"], light: ["sun", "亮色"], dark: ["moon", "暗色"] };
-function applyTheme(t) {
-  if (t === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.dataset.theme = t;
-  $("btnTheme").innerHTML = icon(THEMES[t][0]);
-  $("btnTheme").title = `主题：${THEMES[t][1]}（点击切换）`;
+function applyTheme(theme) {
+  if (theme === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.dataset.theme = theme;
+  $("btnTheme").innerHTML = icon(THEMES[theme][0]);
+  $("btnTheme").title = t("主题：{name}（点击切换）", { name: t(THEMES[theme][1]) });
 }
 $("btnTheme").onclick = () => {
   const order = ["auto", "light", "dark"], next = order[(order.indexOf(store.get("pf-theme") || "auto") + 1) % 3];
-  store.set("pf-theme", next); applyTheme(next); toast(`主题：${THEMES[next][1]}`);
+  store.set("pf-theme", next); applyTheme(next); toast(t("主题：{name}", { name: t(THEMES[next][1]) }));
 };
 applyTheme(store.get("pf-theme") || "auto");
+
+/* ---------- 语言：按钮显示要切到的语言；切换后重画动态内容，不刷新页面 ---------- */
+function langButtons() {
+  const en = i18n.lang === "en";
+  document.querySelectorAll("[data-lang-toggle]").forEach(b => {
+    b.textContent = en ? "中" : "EN";
+    b.title = en ? "切换到中文" : "Switch to English";
+    b.setAttribute("aria-label", b.title);
+  });
+}
+document.querySelectorAll("[data-lang-toggle]").forEach(b => b.onclick = () => {
+  i18n.set(i18n.lang === "en" ? "zh" : "en");
+  langButtons(); applyTheme(store.get("pf-theme") || "auto");
+  if (!$("auth").classList.contains("hidden")) { typer(); return; }
+  renderTargets(); checkSlug(); descHint(); if ($("saved").textContent !== "Markdown") writeDraft();
+  route();
+  if (currentId && !$("result").classList.contains("hidden")) refresh().catch(() => {});
+});
+langButtons();
 
 /* ---------- 登录 / 首次设置 ---------- */
 const TAGLINES = ["一次粘贴，发布到所有博客", "AI 生成英文网址、描述与关键词", "Hexo · VuePress · Hugo · Jekyll · Astro", "提交即部署，GitHub Actions 接力"];
@@ -91,7 +111,7 @@ function typer() {
   clearTimeout(typerTimer);
   let line = 0, i = 0, del = false;
   const tick = () => {
-    const s = TAGLINES[line];
+    const s = t(TAGLINES[line]);
     $("typer").textContent = s.slice(0, i);
     if (!del && i === s.length) { del = true; typerTimer = setTimeout(tick, 2200); return; }
     if (del && i === 0) { del = false; line = (line + 1) % TAGLINES.length; }
@@ -127,7 +147,7 @@ function fail(form, msgEl, msg) {
 $("login").onsubmit = e => {
   e.preventDefault();
   $("loginMsg").textContent = "";
-  if (!$("pw").value) return fail($("login"), $("loginMsg"), "请输入密码");
+  if (!$("pw").value) return fail($("login"), $("loginMsg"), t("请输入密码"));
   busy($("btnLogin"), async () => {
     try { csrf = (await api("/api/login", { password: $("pw").value })).csrf; $("pw").value = ""; await enterApp($("btnLogin")); }
     catch (err) { fail($("login"), $("loginMsg"), err.message); $("pw").select(); }
@@ -137,10 +157,10 @@ $("login").onsubmit = e => {
 $("setup").onsubmit = e => {
   e.preventDefault();
   const msg = $("setupMsg"); msg.textContent = "";
-  if ($("setupPw").value.length < 8) return fail($("setup"), msg, "密码至少 8 位");
-  if ($("setupPw").value !== $("setupPw2").value) return fail($("setup"), msg, "两次输入的密码不一致");
+  if ($("setupPw").value.length < 8) return fail($("setup"), msg, t("密码至少 8 位"));
+  if ($("setupPw").value !== $("setupPw2").value) return fail($("setup"), msg, t("两次输入的密码不一致"));
   busy($("btnSetup"), async () => {
-    try { csrf = (await api("/api/setup", { code: $("setupCode").value, password: $("setupPw").value })).csrf; await enterApp($("btnSetup")); toast("密码已设置"); }
+    try { csrf = (await api("/api/setup", { code: $("setupCode").value, password: $("setupPw").value })).csrf; await enterApp($("btnSetup")); toast(t("密码已设置")); }
     catch (err) { fail($("setup"), msg, err.message); }
   });
 };
@@ -150,7 +170,7 @@ $("setup").onsubmit = e => {
 }));
 
 $("btnLogout").onclick = async () => {
-  const { ok } = await confirmDialog({ title: "退出登录？", text: "草稿会保留在这个浏览器里。", ok: "退出" });
+  const { ok } = await confirmDialog({ title: t("退出登录？"), text: t("草稿会保留在这个浏览器里。"), ok: t("退出") });
   if (!ok) return;
   await api("/api/logout", {}).catch(() => {});
   showAuth("login");
@@ -222,8 +242,8 @@ function writeDraft() {
   const d = Object.fromEntries(DRAFT_FIELDS.map(k => [k, $(k).value]));
   const empty = DRAFT_FIELDS.every(k => k === "date" || !d[k].trim());
   store.set(DRAFT_KEY, empty ? null : JSON.stringify(d));
-  const t = new Date();
-  $("saved").textContent = empty ? "Markdown" : `草稿已保存 ${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}`;
+  const now = new Date();
+  $("saved").textContent = empty ? "Markdown" : t("草稿已保存 {time}", { time: `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}` });
 }
 function saveDraft() { clearTimeout(draftTimer); draftTimer = setTimeout(writeDraft, 400); }
 // 刷新 / 关标签页 / 切走时立刻写，避免丢掉最后 0.4 秒的输入
@@ -232,7 +252,7 @@ document.addEventListener("visibilitychange", () => { if (document.hidden && dra
 function restoreDraft() {
   let d = null;
   try { d = JSON.parse(store.get(DRAFT_KEY) || "null"); } catch {}
-  if (d && !$("body").value) { DRAFT_FIELDS.forEach(k => { if (d[k] != null) $(k).value = d[k]; }); $("saved").textContent = "已恢复上次的草稿"; }
+  if (d && !$("body").value) { DRAFT_FIELDS.forEach(k => { if (d[k] != null) $(k).value = d[k]; }); $("saved").textContent = t("已恢复上次的草稿"); }
   if (!$("date").value) $("date").value = localNow();
   updateCount(); checkSlug(); descHint();
 }
@@ -267,17 +287,17 @@ $("body").addEventListener("paste", e => {
   }
   const imgs = [...md.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)].map(m => m[1]);
   const locked = imgs.filter(u => /feishu\.cn|larksuite\.com|feishucdn|mmbiz\.q(pic|logo)\.cn/.test(u)).length;
-  const local = (md.match(/本地图片，请上传到图床/g) || []).length;
-  toast(`已转成 Markdown · ⌘Z 撤销 · ⌘⇧V 粘贴纯文本${locked || local ? `；${locked + local} 张图片发布前要换成图床链接（飞书需登录 / 公众号防盗链）` : ""}`,
+  const local = md.split(t(window.LOCAL_IMAGE_NOTE)).length - 1;
+  toast(t("已转成 Markdown · ⌘Z 撤销 · ⌘⇧V 粘贴纯文本") + (locked || local ? t("；{n} 张图片发布前要换成图床链接（飞书需登录 / 公众号防盗链）", { n: locked + local }) : ""),
         locked || local ? "err" : "");
 });
 
 function checkSlug() {
   const v = $("slug").value.trim(), bad = v && !SLUG_RE.test(v);
   const soft = v && !bad && !SLUG_RECOMMENDED.test(v) && !editing;
-  $("slugHint").textContent = bad ? "只能用字母、数字、中文，用 - 或 _ 连接（不能有空格和其他符号）"
-    : editing ? "已发布文章的网址不能改（改了老链接会 404）"
-    : soft ? "可以用，但推荐小写英文 + 连字符，网址更干净" : "点「AI 生成」按标题提炼英文主题词，如 python-314-free-threading-template-strings-upgrade";
+  $("slugHint").textContent = bad ? t("只能用字母、数字、中文，用 - 或 _ 连接（不能有空格和其他符号）")
+    : editing ? t("已发布文章的网址不能改（改了老链接会 404）")
+    : soft ? t("可以用，但推荐小写英文 + 连字符，网址更干净") : t("点「AI 生成」按标题提炼英文主题词，如 {eg}", { eg: SLUG_EXAMPLE });
   $("slugHint").classList.toggle("err", !!bad);
 }
 $("slug").addEventListener("input", checkSlug);
@@ -296,12 +316,13 @@ async function genSlug(force = false) {
   } catch {}
 }
 // 网址由「AI 生成」按标题提炼英文主题词；右侧按钮是没有 AI 时的备用（按标题转拼音）
-$("btnSlugGen").onclick = () => editing ? toast("已发布文章的网址不能改，改了老链接会 404", "err") : genSlug(true);
+$("btnSlugGen").onclick = () => editing ? toast(t("已发布文章的网址不能改，改了老链接会 404"), "err") : genSlug(true);
 
 /* 描述长度提示：百度电脑端摘要约显示 78 个字 */
 function descHint() {
   const n = [...$("description").value.trim()].length, el = $("descHint");
-  el.textContent = n ? `${n} 字 · 建议 100–130 字（第一句讲事实，第二句写读者会搜的问题）${n > 150 ? "（偏长）" : n < 80 ? "（偏短）" : ""}` : "建议 100–130 字：第一句讲事实，第二句写读者会搜的问题";
+  el.textContent = n ? t("{n} 字 · 建议 100–130 字（第一句讲事实，第二句写读者会搜的问题）", { n }) + (n > 150 ? t("（偏长）") : n < 80 ? t("（偏短）") : "")
+    : t("建议 100–130 字：第一句讲事实，第二句写读者会搜的问题");
   el.className = `hint ${n && (n > 150 || n < 80) ? "warn" : ""}`;
 }
 $("description").addEventListener("input", descHint);
@@ -314,7 +335,7 @@ function fillAll(v) {
 
 $("btnNew").onclick = async () => {
   if (DRAFT_FIELDS.some(k => k !== "date" && $(k).value.trim())) {
-    const { ok } = await confirmDialog({ title: "开始新文章？", text: "当前正文和元数据会被清空，草稿也会删除。", ok: "清空", danger: true });
+    const { ok } = await confirmDialog({ title: t("开始新文章？"), text: t("当前正文和元数据会被清空，草稿也会删除。"), ok: t("清空"), danger: true });
     if (!ok) return;
   }
   fillAll({ date: localNow() });
@@ -325,9 +346,9 @@ $("btnNew").onclick = async () => {
 
 async function importFile(file) {
   if (!file) return;
-  if (!/\.(md|markdown|txt)$/i.test(file.name) && !/^text\//.test(file.type)) return toast("只支持 .md / .markdown / .txt", "err");
+  if (!/\.(md|markdown|txt)$/i.test(file.name) && !/^text\//.test(file.type)) return toast(t("只支持 .md / .markdown / .txt"), "err");
   if ($("body").value.trim()) {
-    const { ok } = await confirmDialog({ title: `导入「${file.name}」？`, text: "会替换当前正文。", ok: "替换" });
+    const { ok } = await confirmDialog({ title: t("导入「{name}」？", { name: file.name }), text: t("会替换当前正文。"), ok: t("替换") });
     if (!ok) return;
   }
   let text = await file.text();
@@ -341,7 +362,7 @@ async function importFile(file) {
   if (!$("slug").value && SLUG_RE.test(base)) $("slug").value = base;
   $("body").value = text.replace(/^\s+/, "");
   updateCount(); checkSlug(); saveDraft();
-  toast(`已导入 ${file.name}`);
+  toast(t("已导入 {name}", { name: file.name }));
 }
 $("btnImport").onclick = () => $("fileInput").click();
 $("fileInput").onchange = () => { importFile($("fileInput").files[0]); $("fileInput").value = ""; };
@@ -364,7 +385,7 @@ function renderTargets() {
 }
 
 $("btnEnrich").onclick = () => {
-  if (!$("body").value.trim()) { toast("先粘贴正文", "err"); $("body").focus(); return; }
+  if (!$("body").value.trim()) { toast(t("先粘贴正文"), "err"); $("body").focus(); return; }
   busy($("btnEnrich"), async () => {
     try {
       // 标题是你定的，AI 不改；只填网址（按标题生成拼音）、描述、关键词，标签和分类不动
@@ -373,7 +394,7 @@ $("btnEnrich").onclick = () => {
       if (!editing) $("slug").value = autoSlug = m.slug;  // 已发布文章不改网址
       $("description").value = m.description; $("keywords").value = m.keywords.join(", ");
       checkSlug(); descHint(); saveDraft();
-      toast("已生成网址、描述、关键词；标题没改");
+      toast(t("已生成网址、描述、关键词；标题没改"));
     } catch (e) { toast(e.message, "err"); }
   });
 };
@@ -393,18 +414,18 @@ function validate(p) {
   if (!p.post.date) p.post.date = null;  // 老文章可以没有日期；新文章由后端要求必填
   const miss = [!p.post.body.trim() && "正文", !p.post.title && "标题", !p.post.slug && "Slug",
                 !p.post.date && !editing && "发布时间"].filter(Boolean);
-  if (miss.length) { toast(`还没填：${miss.join("、")}`, "err"); return false; }
-  if (!SLUG_RE.test(p.post.slug)) { toast("Slug 格式不对", "err"); $("slug").focus(); return false; }
-  if (!p.blog_ids.length) { toast("至少选一个博客", "err"); return false; }
+  if (miss.length) { toast(t("还没填：{list}", { list: miss.map(m => t(m)).join(t("、")) }), "err"); return false; }
+  if (!SLUG_RE.test(p.post.slug)) { toast(t("Slug 格式不对"), "err"); $("slug").focus(); return false; }
+  if (!p.blog_ids.length) { toast(t("至少选一个博客"), "err"); return false; }
   return true;
 }
 
 function renderPreview(i) {
   document.querySelectorAll("#previewTabs button").forEach((b, j) => b.classList.toggle("on", i === j));
   const p = previews[i];
-  const state = p.exists ? `<span class="badge warn"><span class="dot"></span>已存在${$("overwrite").checked ? "，将覆盖" : "，需打开覆盖"}</span>`
-    : p.check_error ? `<span class="badge err" title="${esc(p.check_error)}">无法检查是否已存在</span>` : `<span class="badge ok">新文件</span>`;
-  $("previewMeta").innerHTML = `${state}${p.editing ? '<span class="badge run">编辑原文件 · 只改动过的部分</span>' : ""}<code>${esc(p.path)}</code>`;
+  const state = p.exists ? `<span class="badge warn"><span class="dot"></span>${t($("overwrite").checked ? "已存在，将覆盖" : "已存在，需打开覆盖")}</span>`
+    : p.check_error ? `<span class="badge err" title="${esc(t(p.check_error))}">${t("无法检查是否已存在")}</span>` : `<span class="badge ok">${t("新文件")}</span>`;
+  $("previewMeta").innerHTML = `${state}${p.editing ? `<span class="badge run">${t("编辑原文件 · 只改动过的部分")}</span>` : ""}<code>${esc(p.path)}</code>`;
   $("previewBody").textContent = p.content;
 }
 
@@ -414,7 +435,7 @@ $("btnPreview").onclick = () => {
   busy($("btnPreview"), async () => {
     try {
       previews = await api("/api/preview", p);
-      $("previewSub").textContent = `${previews.length} 个博客 · 未提交，只是看看`;
+      $("previewSub").textContent = t("{n} 个博客 · 未提交，只是看看", { n: previews.length });
       $("previewTabs").innerHTML = previews.map((x, i) => `<button data-i="${i}">${esc(x.name)}${x.exists ? '<span class="dot" style="color:var(--warn)"></span>' : ""}</button>`).join("");
       $("previewTabs").querySelectorAll("button").forEach(b => b.onclick = () => renderPreview(+b.dataset.i));
       renderPreview(0);
@@ -427,8 +448,8 @@ async function publish(skipConfirm) {
   const p = payload();
   if (!validate(p)) return;
   if (!skipConfirm) {
-    const names = blogs.filter(b => p.blog_ids.includes(b.id)).map(b => b.name).join("、");
-    const { ok } = await confirmDialog({ title: "发布这篇文章？", text: `「${p.post.title}」将提交到 ${names}，提交后各仓库会自动构建部署。`, ok: "发布" });
+    const names = blogs.filter(b => p.blog_ids.includes(b.id)).map(b => b.name).join(t("、"));
+    const { ok } = await confirmDialog({ title: t("发布这篇文章？"), text: t("「{title}」将提交到 {names}，提交后各仓库会自动构建部署。", { title: p.post.title, names }), ok: t("发布") });
     if (!ok) return;
   }
   await busy($("btnPublish"), async () => {
@@ -436,7 +457,7 @@ async function publish(skipConfirm) {
       const rec = await api("/api/publish", p);
       currentId = rec.id;
       const okN = rec.results.filter(r => r.ok).length;
-      toast(okN === rec.results.length ? "已提交，等待构建" : `${rec.results.length - okN} 个失败，见发布结果`, okN === rec.results.length ? "" : "err");
+      toast(okN === rec.results.length ? t("已提交，等待构建") : t("{n} 个失败，见发布结果", { n: rec.results.length - okN }), okN === rec.results.length ? "" : "err");
       await refresh(true);
     } catch (e) { toast(e.message, "err"); }
   });
@@ -446,9 +467,9 @@ $("btnPublishFromPreview").onclick = () => { $("dlgPreview").close(); publish(tr
 
 /* ---------- 发布结果（自动轮询 Actions 状态） ---------- */
 function runBadge(r) {
-  if (r.conclusion === "success") return `<span class="badge ok"><span class="dot"></span>已部署</span>`;
+  if (r.conclusion === "success") return `<span class="badge ok"><span class="dot"></span>${t("已部署")}</span>`;
   if (r.conclusion) return `<span class="badge err"><span class="dot"></span>${esc(r.conclusion)}</span>`;
-  return `<span class="badge run"><span class="dot"></span>${r.status === "queued" ? "排队中" : "构建中"}</span>`;
+  return `<span class="badge run"><span class="dot"></span>${t(r.status === "queued" ? "排队中" : "构建中")}</span>`;
 }
 const blogName = id => blogs.find(b => b.id === id)?.name || id;
 
@@ -456,14 +477,14 @@ function resultRows(rec) {
   return rec.results.map(r => `
     <div class="row"><div class="r-main">
       <div class="r-title">${esc(blogName(r.blog_id))}
-        ${r.ok ? '<span class="badge ok">已提交</span>' : '<span class="badge err">失败</span>'}
-        ${r.ok ? (r.runs?.length ? r.runs.map(runBadge).join("") : '<span class="badge">Actions 未开始</span>') : ""}</div>
+        ${r.ok ? `<span class="badge ok">${t("已提交")}</span>` : `<span class="badge err">${t("失败")}</span>`}
+        ${r.ok ? (r.runs?.length ? r.runs.map(runBadge).join("") : `<span class="badge">${t("Actions 未开始")}</span>`) : ""}</div>
       <div class="r-sub mono">${esc(r.path)}</div>
-      ${r.ok ? `<div class="r-links"><a href="${esc(r.commit_url)}" target="_blank" rel="noopener">${icon("external")}提交 ${esc(r.commit_sha.slice(0, 7))}</a>
+      ${r.ok ? `<div class="r-links"><a href="${esc(r.commit_url)}" target="_blank" rel="noopener">${icon("external")}${t("提交 {sha}", { sha: esc(r.commit_sha.slice(0, 7)) })}</a>
         ${r.runs?.map(x => `<a href="${esc(x.url)}" target="_blank" rel="noopener">${icon("external")}${esc(x.name)}</a>`).join("") || ""}
-        ${r.post_url ? `<a href="${esc(r.post_url)}" target="_blank" rel="noopener">${icon("external")}文章</a>` : ""}</div>` : ""}
-      ${r.error ? `<div class="r-err">${esc(r.error)}</div>` : ""}
-      ${r.runs_error ? `<div class="r-err">${esc(r.runs_error)}</div>` : ""}
+        ${r.post_url ? `<a href="${esc(r.post_url)}" target="_blank" rel="noopener">${icon("external")}${t("文章")}</a>` : ""}</div>` : ""}
+      ${r.error ? `<div class="r-err">${esc(t(r.error))}</div>` : ""}
+      ${r.runs_error ? `<div class="r-err">${esc(t(r.runs_error))}</div>` : ""}
     </div></div>`).join("");
 }
 
@@ -510,12 +531,12 @@ function renderHistory() {
         <div class="r-sub">#${h.id} · ${esc(h.created_at.replace("T", " ").slice(0, 16))} · <span class="mono">${esc(h.post.slug)}</span></div>
         <div class="pills">${h.results.map(r => `<span class="badge ${r.ok ? "ok" : "err"}">${esc(blogName(r.blog_id))} ${r.ok ? "✓" : "✗"}</span>`).join("")}</div>
       </div><div class="r-actions">
-        ${failed.length ? `<button class="btn secondary sm" data-act="retry" data-id="${h.id}" data-blogs="${esc(failed.join(","))}">重发失败的</button>` : ""}
-        ${missing.length ? `<button class="btn secondary sm" data-act="retry" data-id="${h.id}" data-blogs="${esc(missing.join(","))}">补发 ${missing.length} 个</button>` : ""}
-        <button class="btn ghost sm" data-act="load" data-id="${h.id}">载入编辑</button>
-        <button class="btn ghost sm" data-act="status" data-id="${h.id}">查看状态</button>
+        ${failed.length ? `<button class="btn secondary sm" data-act="retry" data-id="${h.id}" data-blogs="${esc(failed.join(","))}">${t("重发失败的")}</button>` : ""}
+        ${missing.length ? `<button class="btn secondary sm" data-act="retry" data-id="${h.id}" data-blogs="${esc(missing.join(","))}">${t("补发 {n} 个", { n: missing.length })}</button>` : ""}
+        <button class="btn ghost sm" data-act="load" data-id="${h.id}">${t("载入编辑")}</button>
+        <button class="btn ghost sm" data-act="status" data-id="${h.id}">${t("查看状态")}</button>
       </div></div>`;
-  }).join("") : `<div class="empty-row">${q ? "没有匹配的记录" : "还没有发布记录"}</div>`;
+  }).join("") : `<div class="empty-row">${t(q ? "没有匹配的记录" : "还没有发布记录")}</div>`;
   $("historyBody").querySelectorAll("button").forEach(b => b.onclick = () => historyAction(b));
 }
 $("histSearch").addEventListener("input", renderHistory);
@@ -524,20 +545,20 @@ async function historyAction(b) {
   const h = records.find(x => x.id === +b.dataset.id);
   if (b.dataset.act === "load") {
     if (DRAFT_FIELDS.some(k => k !== "date" && $(k).value.trim())) {
-      const { ok } = await confirmDialog({ title: `载入「${h.post.title}」？`, text: "会替换编辑器里当前的内容。", ok: "载入" });
+      const { ok } = await confirmDialog({ title: t("载入「{title}」？", { title: h.post.title }), text: t("会替换编辑器里当前的内容。"), ok: t("载入") });
       if (!ok) return;
     }
     const p = h.post, j = a => (a || []).join(", ");
     fillAll({ ...p, date: p.date ? String(p.date).slice(0, 16) : "", tags: j(p.tags), categories: j(p.categories), keywords: j(p.keywords) });
     const [bid, path] = Object.entries(p._paths || {})[0] || [];
     setEditing(bid ? { blog_id: bid, path } : null);
-    location.hash = "write"; toast(bid ? "已载入，发布会写回原文件" : "已载入，修改后可重新发布（同 slug 需打开覆盖）");
+    location.hash = "write"; toast(t(bid ? "已载入，发布会写回原文件" : "已载入，修改后可重新发布（同 slug 需打开覆盖）"));
     return;
   }
   currentId = h.id;
   if (b.dataset.act === "retry") {
     const ids = b.dataset.blogs.split(",");
-    const { ok, overwrite } = await confirmDialog({ title: `发布到 ${ids.map(blogName).join("、")}？`, text: "用当时保存的文章内容重新生成并提交。", ok: "发布", overwrite: false });
+    const { ok, overwrite } = await confirmDialog({ title: t("发布到 {names}？", { names: ids.map(blogName).join(t("、")) }), text: t("用当时保存的文章内容重新生成并提交。"), ok: t("发布"), overwrite: false });
     if (!ok) return;
     try { await busy(b, () => api(`/api/publish/${currentId}/retry`, { blog_ids: ids, overwrite })); }
     catch (e) { return toast(e.message, "err"); }
@@ -556,17 +577,17 @@ function setEditing(e) {
   document.querySelectorAll("#targets input").forEach(i => i.checked = i.value === editing.blog_id);
   $("overwrite").checked = true;
 }
-$("btnStopEditing").onclick = () => { setEditing(null); toast("已取消关联，之后发布当作新文章"); };
+$("btnStopEditing").onclick = () => { setEditing(null); toast(t("已取消关联，之后发布当作新文章")); };
 
 async function loadArticles(force = false) {
-  if (!blogs.length) { $("artBody").innerHTML = '<div class="empty-row">还没有博客，先去「设置」添加</div>'; return; }
+  if (!blogs.length) { $("artBody").innerHTML = `<div class="empty-row">${t("还没有博客，先去「设置」添加")}</div>`; return; }
   const sel = $("artBlog");
   if (!sel.options.length || force) {
     const cur = sel.value || store.get("pf-art-blog");
     sel.innerHTML = blogs.map(b => `<option value="${esc(b.id)}">${esc(b.name)}</option>`).join("");
     if (blogs.some(b => b.id === cur)) sel.value = cur;
   }
-  $("artBody").innerHTML = '<div class="empty-row">正在读取仓库…</div>'; $("artCount").textContent = "";
+  $("artBody").innerHTML = `<div class="empty-row">${t("正在读取仓库…")}</div>`; $("artCount").textContent = "";
   try { articles = await api(`/api/blogs/${encodeURIComponent(sel.value)}/articles`); }
   catch (e) { $("artBody").innerHTML = `<div class="empty-row">${esc(e.message)}</div>`; return; }
   renderArticles();
@@ -575,16 +596,16 @@ async function loadArticles(force = false) {
 function renderArticles() {
   const q = $("artSearch").value.trim().toLowerCase();
   const items = articles.filter(a => !q || a.path.toLowerCase().includes(q));
-  $("artCount").textContent = `${items.length} / ${articles.length} 篇`;
+  $("artCount").textContent = t("{shown} / {total} 篇", { shown: items.length, total: articles.length });
   $("artBody").innerHTML = items.length ? items.map(a => `
     <div class="row" data-path="${esc(a.path)}"><div class="r-main">
       <div class="r-title">${esc(a.slug)}${a.dir ? ` <span class="tag">${esc(a.dir)}</span>` : ""}</div>
       <div class="r-sub mono">${esc(a.path)}</div>
     </div><div class="r-actions">
-      ${a.url ? `<a class="btn ghost sm" href="${esc(a.url)}" target="_blank" rel="noopener">${icon("external")}查看</a>` : ""}
-      <button class="btn secondary sm" data-act="edit">编辑</button>
-      <button class="btn danger-ghost sm" data-act="delete">删除</button>
-    </div></div>`).join("") : `<div class="empty-row">${q ? "没有匹配的文章" : "这个博客的文章目录里还没有文章"}</div>`;
+      ${a.url ? `<a class="btn ghost sm" href="${esc(a.url)}" target="_blank" rel="noopener">${icon("external")}${t("查看")}</a>` : ""}
+      <button class="btn secondary sm" data-act="edit">${t("编辑")}</button>
+      <button class="btn danger-ghost sm" data-act="delete">${t("删除")}</button>
+    </div></div>`).join("") : `<div class="empty-row">${t(q ? "没有匹配的文章" : "这个博客的文章目录里还没有文章")}</div>`;
   $("artBody").querySelectorAll("button").forEach(b => b.onclick = () => articleAction(b, b.closest(".row").dataset.path));
 }
 $("artBlog").onchange = () => { store.set("pf-art-blog", $("artBlog").value); loadArticles(); };
@@ -595,7 +616,7 @@ async function articleAction(btn, path) {
   const blogId = $("artBlog").value;
   if (btn.dataset.act === "edit") {
     if (DRAFT_FIELDS.some(k => k !== "date" && $(k).value.trim())) {
-      const { ok } = await confirmDialog({ title: "载入这篇文章？", text: "会替换写作页里当前的内容（当前草稿不会保留）。", ok: "载入" });
+      const { ok } = await confirmDialog({ title: t("载入这篇文章？"), text: t("会替换写作页里当前的内容（当前草稿不会保留）。"), ok: t("载入") });
       if (!ok) return;
     }
     await busy(btn, async () => {
@@ -605,28 +626,28 @@ async function articleAction(btn, path) {
         fillAll({ ...post, date: post.date ? String(post.date).slice(0, 16) : "", tags: j(post.tags), categories: j(post.categories), keywords: j(post.keywords) });
         setEditing({ blog_id: blogId, path });
         location.hash = "write";
-        toast("已载入，改完点发布会写回原文件");
+        toast(t("已载入，改完点发布会写回原文件"));
       } catch (e) { toast(e.message, "err"); }
     });
     return;
   }
   const { ok } = await confirmDialog({
-    title: "删除这篇文章？", danger: true, ok: "删除",
-    text: `将从「${blogName(blogId)}」仓库删除 ${path}，并登记到放行名单；约 2 分钟后线上页面消失。已被搜索引擎收录的链接会变成 404，能改就尽量别删。`,
+    title: t("删除这篇文章？"), danger: true, ok: t("删除"),
+    text: t("将从「{blog}」仓库删除 {path}，并登记到放行名单；约 2 分钟后线上页面消失。已被搜索引擎收录的链接会变成 404，能改就尽量别删。", { blog: blogName(blogId), path }),
   });
   if (!ok) return;
   await busy(btn, async () => {
     try {
       await api(`/api/blogs/${encodeURIComponent(blogId)}/articles/delete`, { path });
       if (editing && editing.blog_id === blogId && editing.path === path) setEditing(null);
-      toast("已删除，约 2 分钟后从线上消失");
+      toast(t("已删除，约 2 分钟后从线上消失"));
       await loadArticles();
     } catch (e) { toast(e.message, "err"); }
   });
 }
 
 /* ---------- 设置 ---------- */
-const adapterLabel = name => adapters.find(a => a.name === name)?.label || name;
+const adapterLabel = name => t(adapters.find(a => a.name === name)?.label || name);
 
 async function loadConfig() {
   let cfg;
@@ -635,35 +656,35 @@ async function loadConfig() {
   for (const key of ["github_token", "anthropic_api_key"]) {
     const s = cfg.secrets[key], el = $(`st_${key}`);
     el.className = `badge ${s.set ? "ok" : "warn"}`;
-    el.textContent = s.set ? `已设置 ${s.hint}${s.source === "env" ? " · 环境变量" : ""}` : "未设置";
+    el.textContent = s.set ? t("已设置 {hint}", { hint: t(s.hint) }) + (s.source === "env" ? t(" · 环境变量") : "") : t("未设置");
     document.querySelector(`[data-clear="${key}"]`).classList.toggle("hidden", s.source !== "page");
   }
   $("model").value = cfg.secrets.anthropic_model;
-  $("aiProvider").innerHTML = Object.entries(cfg.ai_providers).map(([k, v]) => `<option value="${esc(k)}">${esc(v)}</option>`).join("");
+  $("aiProvider").innerHTML = Object.entries(cfg.ai_providers).map(([k, v]) => `<option value="${esc(k)}">${esc(t(v))}</option>`).join("");
   $("aiProvider").value = cfg.secrets.ai_provider; $("aiBaseUrl").value = cfg.secrets.ai_base_url || "";
   aiFormHints(); $("aiTestMsg").textContent = "";
   const ak = cfg.secrets.anthropic_api_key;
   $("aiState").className = `badge ${ak.set ? "ok" : "warn"}`;
-  $("aiState").textContent = ak.set ? (cfg.secrets.ai_base_url ? "中转站" : (cfg.secrets.ai_provider === "anthropic" ? "官方" : "已配置")) : "未配置";
+  $("aiState").textContent = t(ak.set ? (cfg.secrets.ai_base_url ? "中转站" : (cfg.secrets.ai_provider === "anthropic" ? "官方" : "已配置")) : "未配置");
   $("blogList").innerHTML = cfg.blogs.length ? cfg.blogs.map(b => `
     <div class="row" data-id="${esc(b.id)}"><div class="r-main">
-      <div class="r-title">${esc(b.name)} <span class="tag">${esc(b.id)}</span>${b.token_set ? `<span class="badge" title="这个博客用自己的 GitHub Token">专用 Token ${esc(b.token_hint)}</span>` : ""}<span class="badge" data-check></span></div>
+      <div class="r-title">${esc(b.name)} <span class="tag">${esc(b.id)}</span>${b.token_set ? `<span class="badge" title="${t("这个博客用自己的 GitHub Token")}">${t("专用 Token {hint}", { hint: esc(t(b.token_hint)) })}</span>` : ""}<span class="badge" data-check></span></div>
       <div class="r-sub">${esc(adapterLabel(b.adapter))}</div>
       <div class="r-sub mono">${esc(b.repo)}@${esc(b.branch)} → ${esc(b.posts_dir)}/${esc(b.filename)}</div>
     </div><div class="r-actions">
-      <button class="btn ghost sm" data-act="check">检查连接</button>
-      <button class="btn ghost sm" data-act="edit">编辑</button>
-      <button class="btn danger-ghost sm" data-act="delete">删除</button>
-    </div></div>`).join("") : '<div class="empty-row">还没有博客，点右上角「添加博客」</div>';
+      <button class="btn ghost sm" data-act="check">${t("检查连接")}</button>
+      <button class="btn ghost sm" data-act="edit">${t("编辑")}</button>
+      <button class="btn danger-ghost sm" data-act="delete">${t("删除")}</button>
+    </div></div>`).join("") : `<div class="empty-row">${t("还没有博客，点右上角「添加博客」")}</div>`;
   $("blogList").querySelectorAll("button").forEach(btn => btn.onclick = () => blogAction(btn, cfg.blogs.find(b => b.id === btn.closest(".row").dataset.id)));
 }
 
 async function blogAction(btn, blog) {
   if (btn.dataset.act === "edit") return openBlogForm(blog);
   if (btn.dataset.act === "delete") {
-    const { ok } = await confirmDialog({ title: `删除「${blog.name}」？`, text: "只删除这里的配置，不会动 GitHub 仓库；历史记录保留。", ok: "删除", danger: true });
+    const { ok } = await confirmDialog({ title: t("删除「{name}」？", { name: blog.name }), text: t("只删除这里的配置，不会动 GitHub 仓库；历史记录保留。"), ok: t("删除"), danger: true });
     if (!ok) return;
-    try { await api(`/api/config/blogs/${encodeURIComponent(blog.id)}/delete`, {}); toast("已删除"); await afterBlogsChanged(); }
+    try { await api(`/api/config/blogs/${encodeURIComponent(blog.id)}/delete`, {}); toast(t("已删除")); await afterBlogsChanged(); }
     catch (e) { toast(e.message, "err"); }
     return;
   }
@@ -672,8 +693,8 @@ async function blogAction(btn, blog) {
     try {
       const r = await api(`/api/config/blogs/${encodeURIComponent(blog.id)}/check`, {});
       badge.className = `badge ${r.ok ? "ok" : "err"}`;
-      badge.textContent = r.ok ? "连接正常" : "有问题";
-      if (!r.ok) toast(r.problems.join("；"), "err");
+      badge.textContent = t(r.ok ? "连接正常" : "有问题");
+      if (!r.ok) toast(r.problems.map(x => t(x)).join(t("；")), "err");
     } catch (e) { toast(e.message, "err"); }
   });
 }
@@ -686,8 +707,8 @@ async function afterBlogsChanged() {
 
 function openBlogForm(blog) {
   editingBlog = blog || null;
-  $("blogFormTitle").textContent = blog ? `编辑「${blog.name}」` : "添加博客";
-  $("f_adapter").innerHTML = adapters.map(a => `<option value="${esc(a.name)}">${esc(a.label)}</option>`).join("");
+  $("blogFormTitle").textContent = blog ? t("编辑「{name}」", { name: blog.name }) : t("添加博客");
+  $("f_adapter").innerHTML = adapters.map(a => `<option value="${esc(a.name)}">${esc(t(a.label))}</option>`).join("");
   const b = blog || { id: "", name: "", repo: "", branch: "main", adapter: "classic-hexo", post_url: "",
                       category_dirs_yaml: "", default_category_dir: "", options_yaml: "" };
   const preset = adapters.find(a => a.name === b.adapter) || adapters[0];
@@ -717,10 +738,10 @@ $("f_adapter").onchange = () => {
 let clearBlogToken = false;
 function setTokenState(set, hint = "") {
   $("f_token_state").className = `badge ${set ? "ok" : ""}`;
-  $("f_token_state").textContent = set ? `已设置 ${hint}` : "";
+  $("f_token_state").textContent = set ? t("已设置 {hint}", { hint: t(hint) }) : "";
   $("btnClearBlogToken").classList.toggle("hidden", !set);
 }
-$("btnClearBlogToken").onclick = () => { clearBlogToken = true; $("f_token").value = ""; setTokenState(false); toast("保存后改用全局 Token"); };
+$("btnClearBlogToken").onclick = () => { clearBlogToken = true; $("f_token").value = ""; setTokenState(false); toast(t("保存后改用全局 Token")); };
 
 $("btnNewBlog").onclick = () => openBlogForm(null);
 
@@ -734,15 +755,15 @@ $("blogForm").onsubmit = e => {
   busy($("btnSaveBlog"), async () => {
     try {
       await api(editingBlog ? `/api/config/blogs/${encodeURIComponent(editingBlog.id)}` : "/api/config/blogs", data);
-      $("dlgBlog").close(); toast("已保存"); await afterBlogsChanged();
+      $("dlgBlog").close(); toast(t("已保存")); await afterBlogsChanged();
     } catch (err) { $("blogMsg").textContent = err.message; }
   });
 };
 
 $("btnSaveGithub").onclick = () => {
-  if (!$("ghToken").value.trim()) return toast("先填 Token", "err");
+  if (!$("ghToken").value.trim()) return toast(t("先填 Token"), "err");
   busy($("btnSaveGithub"), async () => {
-    try { await api("/api/config/secrets", { github_token: $("ghToken").value.trim() }); $("ghToken").value = ""; toast("已保存"); await loadConfig(); }
+    try { await api("/api/config/secrets", { github_token: $("ghToken").value.trim() }); $("ghToken").value = ""; toast(t("已保存")); await loadConfig(); }
     catch (e) { toast(e.message, "err"); }
   });
 };
@@ -756,7 +777,7 @@ const AI_HINTS = {
 };
 function aiFormHints() {
   const h = AI_HINTS[$("aiProvider").value] || AI_HINTS.anthropic;
-  $("aiBaseHint").textContent = h.base; $("aiBaseUrl").placeholder = h.placeholder;
+  $("aiBaseHint").textContent = t(h.base); $("aiBaseUrl").placeholder = h.placeholder;
   $("modelList").innerHTML = h.models.map(m => `<option value="${m}">`).join("");
 }
 $("aiProvider").onchange = () => { aiFormHints(); $("aiTestMsg").textContent = ""; };
@@ -769,35 +790,35 @@ function aiForm() {
 
 $("btnTestAI").onclick = () => busy($("btnTestAI"), async () => {
   const f = aiForm(), msg = $("aiTestMsg");
-  msg.className = "hint"; msg.textContent = "正在测试…";
+  msg.className = "hint"; msg.textContent = t("正在测试…");
   try {
     const r = await api("/api/config/ai/test", { provider: f.ai_provider, base_url: f.ai_base_url, model: f.anthropic_model, api_key: f.anthropic_api_key || null });
     msg.className = `hint ${r.ok ? "ok-text" : "err"}`;
-    msg.textContent = r.ok ? `✓ 连接正常：${r.model} 回复「${r.reply}」，用时 ${(r.ms / 1000).toFixed(1)} 秒` : `✗ ${r.error}`;
+    msg.textContent = r.ok ? t("✓ 连接正常：{model} 回复「{reply}」，用时 {s} 秒", { model: r.model, reply: r.reply, s: (r.ms / 1000).toFixed(1) }) : `✗ ${t(r.error)}`;
   } catch (e) { msg.className = "hint err"; msg.textContent = `✗ ${e.message}`; }
 });
 
 $("btnSaveAI").onclick = () => {
   const f = aiForm();
-  if (!f.anthropic_model) return toast("先填模型名", "err");
+  if (!f.anthropic_model) return toast(t("先填模型名"), "err");
   busy($("btnSaveAI"), async () => {
-    try { await api("/api/config/secrets", f); $("akKey").value = ""; toast("已保存"); await loadConfig(); }
+    try { await api("/api/config/secrets", f); $("akKey").value = ""; toast(t("已保存")); await loadConfig(); }
     catch (e) { toast(e.message, "err"); }
   });
 };
 
 document.querySelectorAll("[data-clear]").forEach(b => b.onclick = async () => {
   const label = b.dataset.clear === "github_token" ? "GitHub Token" : "AI API Key";
-  const { ok } = await confirmDialog({ title: `清除 ${label}？`, text: "清除页面里保存的值；若环境变量里也有，会改用环境变量的。", ok: "清除", danger: true });
+  const { ok } = await confirmDialog({ title: t("清除 {label}？", { label }), text: t("清除页面里保存的值；若环境变量里也有，会改用环境变量的。"), ok: t("清除"), danger: true });
   if (!ok) return;
-  try { await api("/api/config/secrets", { [b.dataset.clear]: "" }); toast("已清除"); await loadConfig(); }
+  try { await api("/api/config/secrets", { [b.dataset.clear]: "" }); toast(t("已清除")); await loadConfig(); }
   catch (e) { toast(e.message, "err"); }
 });
 
 $("btnChangePw").onclick = () => {
-  if ($("pwNew").value.length < 8) return toast("新密码至少 8 位", "err");
+  if ($("pwNew").value.length < 8) return toast(t("新密码至少 8 位"), "err");
   busy($("btnChangePw"), async () => {
-    try { const r = await api("/api/password", { current: $("pwCur").value, new: $("pwNew").value }); csrf = r.csrf || csrf; $("pwCur").value = $("pwNew").value = ""; toast("密码已修改，其他设备需要重新登录"); }
+    try { const r = await api("/api/password", { current: $("pwCur").value, new: $("pwNew").value }); csrf = r.csrf || csrf; $("pwCur").value = $("pwNew").value = ""; toast(t("密码已修改，其他设备需要重新登录")); }
     catch (e) { toast(e.message, "err"); }
   });
 };

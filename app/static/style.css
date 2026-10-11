@@ -422,3 +422,18 @@ kbd { font: 11px var(--mono); padding: 1px 6px; border: 1px solid var(--line-2);
   .editor-tools .btn.ghost span { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } .stage canvas { display: none; } }
+
+/* ---------- 语言 ---------- */
+html[lang="en"] [data-lang="zh"], html:not([lang="en"]) [data-lang="en"] { display: none !important; }
+.lang-btn { font: 600 12px var(--font); letter-spacing: .02em; }
+.stage-lang { position: absolute; top: 16px; right: 16px; z-index: 3; height: 32px; padding: 0 12px; border-radius: 99px; cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, .1); background: rgba(255, 255, 255, .04); color: rgba(236, 236, 245, .7); transition: background .15s, color .15s; }
+.stage-lang:hover { background: rgba(255, 255, 255, .1); color: #fff; }
+/* 英文导航更长：窄屏把导航放到第二行，铺满宽度 */
+@media (max-width: 640px) {
+  html[lang="en"] .topbar-in { flex-wrap: wrap; height: auto; padding: 8px 16px; row-gap: 6px; }
+  html[lang="en"] .brand { margin-right: auto; }
+  html[lang="en"] .brand span { display: inline; }
+  html[lang="en"] .seg { order: 3; width: 100%; margin-right: 0; }
+  html[lang="en"] .seg a { flex: 1; text-align: center; padding: 5px 6px; }
+}

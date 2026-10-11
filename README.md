@@ -22,7 +22,7 @@ English | [简体中文](README_zh.md)
 
 </div>
 
-> The web UI is currently in Chinese. Detailed docs under `docs/` and `workflows/` are in Chinese as well; this README covers everything you need to get started.
+> The web UI has English and Chinese (the EN / 中 button, top right; it follows your browser language until you pick one). Detailed docs under `docs/` and `workflows/` are in Chinese; this README covers everything you need to get started.
 
 ## Why this project exists
 
@@ -64,7 +64,7 @@ The author's own three blogs (two Hexo, one VuePress) have been migrated with it
 - Publish to several blogs at once; **one blog failing never affects the others**. Retry or publish to newly added blogs from the history page.
 - Polls GitHub Actions after publishing and links to the commit, the run and the article.
 - H1 headings inside a new article's body are demoted so each page has a single H1.
-- Draft autosave, import / drag-and-drop `.md`, reading time, shortcuts (`⌘↵` preview, `⌘⇧↵` publish, `?` help), light / dark theme.
+- Draft autosave, import / drag-and-drop `.md`, reading time, shortcuts (`⌘↵` preview, `⌘⇧↵` publish, `?` help), light / dark theme, English / Chinese UI.
 
 **Many blogs, many themes**
 - 14 theme presets: Hexo (generic / Butterfly / NexT / Fluid / Icarus), VuePress theme-hope, VitePress, Hugo, Jekyll, Astro, Docusaurus, plus 3 "classic" formats.
@@ -168,7 +168,6 @@ The code is layered `api → services → adapters / integrations / storage → 
 - **GitHub only** (source repos and Actions); no GitLab / Gitea yet.
 - Images are not re-hosted: replace Feishu / WeChat image links with your own image host first.
 - AI prompts are tuned for **Chinese content and Chinese search engines** (Baidu). For English blogs, adjust the prompt in `app/integrations/claude.py`.
-- The UI is Chinese only for now.
 - On narrow phone screens (~390px) the top navigation labels wrap; it works, but the layout needs polish.
 
 ## License
