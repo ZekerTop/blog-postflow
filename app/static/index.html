@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Postflow</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2318181b'/%3E%3Cpath d='M10 22 22 10M13 10h9v9' stroke='%23fff' stroke-width='2.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/style.css">
+<script src="/static/theme-init.js"></script>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-logo" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="currentColor"/><path d="M10 22 22 10M13 10h9v9" stroke="var(--logo-fg)" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" fill="currentColor"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+  <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4M6.6 6.6C3.9 8.4 2 12 2 12s3.6 7 10 7a9.6 9.6 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.9-3.5M4 4v4h4M4 13a8 8 0 0 0 14.9 3.5M20 20v-4h-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M7 3h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM14 3v5h5M9 13h6M9 17h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6M12 17h.01" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+  <symbol id="i-auto" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 3.5v17a8.5 8.5 0 0 0 0-17z" fill="currentColor"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4M7 9l5-5 5 5M5 15v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-new" viewBox="0 0 24 24"><path d="M7 3h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM14 3v5h5M12 11v6M9 14h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M20 20l-4.2-4.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<!-- ============ 登录 / 首次设置 ============ -->
+<div id="auth" class="stage hidden">
+  <div class="aurora"><i></i><i></i><i></i></div>
+  <div class="gridlines"></div>
+  <canvas id="fx" aria-hidden="true"></canvas>
+  <div class="stage-in">
+    <div class="hero">
+      <div class="hero-logo reveal"><svg><use href="#i-logo"/></svg></div>
+      <h1 class="reveal d1">Postflow</h1>
+      <p class="typer reveal d2" id="typer"></p>
+    </div>
+
+    <form id="login" class="glass reveal d3 hidden" autocomplete="on" novalidate>
+      <h2>欢迎回来</h2>
+      <p class="sub">输入密码，继续发布。</p>
+      <label class="field">
+        <span class="field-label">密码</span>
+        <span class="input-wrap">
+          <input type="password" id="pw" autocomplete="current-password" required>
+          <button type="button" class="icon-btn reveal-pw" data-for="pw" aria-label="显示密码"><svg><use href="#i-eye"/></svg></button>
+        </span>
+      </label>
+      <p class="hint warn hidden" id="capsHint">大写锁定已开启</p>
+      <p class="form-error" id="loginMsg" role="alert"></p>
+      <button class="btn-glow" id="btnLogin" type="submit">进入工作台<svg><use href="#i-arrow"/></svg></button>
+    </form>
+
+    <form id="setup" class="glass reveal d3 hidden" novalidate>
+      <h2>设置登录密码</h2>
+      <p class="sub">首次使用。初始化码在服务启动日志里，也写在服务器的 <code>data/setup-code.txt</code>。</p>
+      <label class="field"><span class="field-label">初始化码</span>
+        <input type="text" id="setupCode" autocomplete="off" spellcheck="false" required></label>
+      <label class="field"><span class="field-label">新密码 <em>至少 8 位</em></span>
+        <span class="input-wrap"><input type="password" id="setupPw" autocomplete="new-password" required>
+          <button type="button" class="icon-btn reveal-pw" data-for="setupPw" aria-label="显示密码"><svg><use href="#i-eye"/></svg></button></span></label>
+      <label class="field"><span class="field-label">再输一次</span>
+        <input type="password" id="setupPw2" autocomplete="new-password" required></label>
+      <p class="form-error" id="setupMsg" role="alert"></p>
+      <button class="btn-glow" id="btnSetup" type="submit">完成设置并进入<svg><use href="#i-arrow"/></svg></button>
+    </form>
+
+    <div class="stage-foot reveal d4"><span>Hexo</span><span>VuePress</span><span>Hugo</span><span>Jekyll</span><span>Astro</span><span>GitHub Actions</span></div>
+  </div>
+</div>
+
+<!-- ============ 主界面 ============ -->
+<div id="app" class="hidden">
+  <header class="topbar">
+    <div class="topbar-in">
+      <a class="brand" href="#write"><svg class="logo"><use href="#i-logo"/></svg><span>Postflow</span></a>
+      <nav class="seg" id="nav">
+        <a href="#write" data-view="write">写作</a>
+        <a href="#articles" data-view="articles">文章</a>
+        <a href="#history" data-view="history">历史</a>
+        <a href="#settings" data-view="settings">设置</a>
+      </nav>
+      <div class="top-actions">
+        <button class="icon-btn" id="btnHelp" title="使用教程与常见问题（?）" aria-label="帮助"><svg><use href="#i-help"/></svg></button>
+        <button class="icon-btn" id="btnTheme" title="主题：跟随系统" aria-label="切换主题"><svg><use href="#i-auto"/></svg></button>
+        <span class="sep"></span>
+        <button class="icon-btn" id="btnLogout" title="退出登录" aria-label="退出登录"><svg><use href="#i-logout"/></svg></button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- 写作 -->
+    <section id="view-write" class="view">
+      <div id="result" class="card result hidden">
+        <div class="card-head">
+          <div><h2>发布结果 <span class="badge live run hidden" id="liveBadge"><span class="dot"></span>自动刷新中</span></h2><p class="muted" id="resultSub"></p></div>
+          <div class="actions"><button class="btn ghost sm" id="btnRefresh"><svg><use href="#i-refresh"/></svg>刷新状态</button>
+            <button class="icon-btn" id="btnCloseResult" aria-label="收起"><svg><use href="#i-close"/></svg></button></div>
+        </div>
+        <div id="resultBody" class="rows"></div>
+      </div>
+
+      <div id="editingBar" class="editing-bar hidden">
+        <svg><use href="#i-doc"/></svg>
+        <div class="eb-main">正在编辑 <b id="editingName"></b> 上的已发布文章 <code id="editingPath"></code>
+          <span class="muted">发布会写回原文件，只改你动过的部分</span></div>
+        <button class="btn ghost sm" id="btnStopEditing" title="之后发布当作新文章">取消关联</button>
+      </div>
+
+      <div class="write">
+        <div class="card editor">
+          <div class="card-head">
+            <div><h2>正文</h2><p class="muted"><span id="count">0</span> 字 · 约 <span id="readMin">0</span> 分钟 · <span class="saved" id="saved">Markdown</span></p></div>
+            <div class="editor-tools">
+              <button class="btn ghost sm" id="btnNew" title="清空，开始新文章"><svg><use href="#i-new"/></svg><span>新文章</span></button>
+              <button class="btn ghost sm" id="btnImport" title="导入 .md 文件（也可以直接拖进来）"><svg><use href="#i-upload"/></svg><span>导入</span></button>
+              <button class="btn secondary" id="btnEnrich"><svg><use href="#i-sparkle"/></svg>AI 生成网址、描述、关键词</button>
+            </div>
+            <input type="file" id="fileInput" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden>
+          </div>
+          <textarea id="body" spellcheck="false" placeholder="粘贴文章：飞书文档、公众号后台、网页复制的内容会自动转成 Markdown（⌘⇧V 按纯文本粘贴）；也可以把 .md 文件拖进来…"></textarea>
+          <div class="drop">松开即可导入 Markdown 文件</div>
+        </div>
+
+        <aside class="side">
+          <div class="card">
+            <div class="card-head"><h2>元数据</h2></div>
+            <label class="field"><span class="field-label">标题</span><input type="text" id="title"></label>
+            <label class="field"><span class="field-label">Slug <em>文章网址的一部分</em></span>
+              <span class="input-wrap"><input type="text" id="slug" spellcheck="false" placeholder="点「AI 生成」按标题提炼英文网址">
+                <button type="button" class="icon-btn" id="btnSlugGen" title="没有 AI 时：按标题转拼音" aria-label="按标题转拼音"><svg><use href="#i-refresh"/></svg></button></span>
+              <span class="hint" id="slugHint"></span></label>
+            <div class="two">
+              <label class="field"><span class="field-label">发布时间</span><input type="datetime-local" id="date" step="60"></label>
+              <label class="field"><span class="field-label">分类</span><input type="text" id="categories" placeholder="ChatGPT"></label>
+            </div>
+            <label class="field"><span class="field-label">标签 <em>逗号分隔</em></span><input type="text" id="tags"></label>
+            <label class="field"><span class="field-label">关键词 <em>逗号分隔，15–30 个，核心词放前面</em></span><input type="text" id="keywords"></label>
+            <label class="field"><span class="field-label">描述 <em>搜索结果里的摘要</em></span><textarea id="description" rows="3"></textarea>
+              <span class="hint" id="descHint"></span></label>
+            <label class="field"><span class="field-label">封面图 <em>可选，主题支持才输出</em></span>
+              <input type="url" id="cover" placeholder="https://…" spellcheck="false"></label>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2>发布到</h2><a class="link sm" href="#settings">管理博客</a></div>
+            <div id="targets" class="targets"></div>
+            <p id="noBlogs" class="empty hidden">还没有博客。<a class="link" href="#settings">去添加 →</a></p>
+            <label class="switch"><input type="checkbox" id="overwrite"><span class="track"></span><span>目标文件已存在时覆盖</span></label>
+          </div>
+          <div class="publish-bar">
+            <button class="btn secondary" id="btnPreview"><svg><use href="#i-doc"/></svg>预览</button>
+            <button class="btn primary" id="btnPublish"><svg><use href="#i-send"/></svg>发布</button>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- 历史 -->
+    <section id="view-articles" class="view hidden">
+      <div class="page-head"><h1>文章</h1><p class="muted">直接读取博客仓库里的全部文章（包括以前用别的方式发的）。编辑会写回原文件、只改你动过的部分；删除会同时登记 SEO 守门的放行名单。</p></div>
+      <div class="toolbar">
+        <select id="artBlog" class="art-blog" aria-label="选择博客"></select>
+        <label class="search"><svg><use href="#i-search"/></svg><input type="text" id="artSearch" placeholder="搜索文件名或目录"></label>
+        <button class="btn secondary" id="btnArtRefresh" title="重新读取仓库"><svg><use href="#i-refresh"/></svg></button>
+      </div>
+      <div class="card flush"><div id="artBody" class="rows"></div></div>
+      <p class="muted art-count" id="artCount"></p>
+    </section>
+
+    <section id="view-history" class="view hidden">
+      <div class="page-head"><h1>发布历史</h1><p class="muted">最近 50 次。失败的可以重发，后来新加的博客可以补发，也可以载入编辑后再发。</p></div>
+      <div class="toolbar"><label class="search"><svg><use href="#i-search"/></svg><input type="text" id="histSearch" placeholder="搜索标题或 slug"></label></div>
+      <div class="card flush"><div id="historyBody" class="rows"></div></div>
+    </section>
+
+    <!-- 设置 -->
+    <section id="view-settings" class="view hidden">
+      <div class="page-head"><h1>设置</h1><p class="muted">只存在服务器本地数据库；密钥页面上只显示末 4 位。</p></div>
+
+      <div class="card">
+        <div class="card-head">
+          <div><h2>博客</h2><p class="muted">每个博客一个源码仓库，主题预设决定生成的 Markdown 格式。</p></div>
+          <button class="btn secondary" id="btnNewBlog"><svg><use href="#i-plus"/></svg>添加博客</button>
+        </div>
+        <div id="blogList" class="rows"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div><h2>GitHub</h2><p class="muted">全局默认 Token；博客仓库在别的 GitHub 账号时，在该博客里填专用 Token。留空 = 不修改。</p></div></div>
+        <div class="secret" data-key="github_token">
+          <label class="field"><span class="field-label">GitHub Token <span class="badge" id="st_github_token"></span></span>
+            <input type="password" id="ghToken" autocomplete="off" placeholder="fine-grained PAT：Contents 读写 + Actions 只读"></label>
+          <button class="btn danger-ghost sm" data-clear="github_token">清除</button>
+        </div>
+        <div class="form-foot"><button class="btn primary" id="btnSaveGithub">保存</button></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div><h2>AI 接口</h2><p class="muted">用于「AI 生成网址、描述、关键词」。官方和中转站都可以；先「测试连接」，通过了再保存。</p></div>
+          <span class="badge" id="aiState"></span></div>
+        <label class="field"><span class="field-label">接口格式</span><select id="aiProvider"></select></label>
+        <label class="field"><span class="field-label">接口地址 <em id="aiBaseHint"></em></span>
+          <input type="url" id="aiBaseUrl" spellcheck="false" autocomplete="off"></label>
+        <div class="two">
+          <div class="secret" data-key="anthropic_api_key">
+            <label class="field"><span class="field-label">API Key <span class="badge" id="st_anthropic_api_key"></span></span>
+              <input type="password" id="akKey" autocomplete="off" placeholder="留空 = 不修改"></label>
+            <button class="btn danger-ghost sm" data-clear="anthropic_api_key">清除</button>
+          </div>
+          <label class="field"><span class="field-label">模型</span><input type="text" id="model" spellcheck="false" list="modelList">
+            <datalist id="modelList"></datalist></label>
+        </div>
+        <p class="hint" id="aiTestMsg"></p>
+        <div class="form-foot"><button class="btn secondary" id="btnTestAI"><svg><use href="#i-refresh"/></svg>测试连接</button>
+          <button class="btn primary" id="btnSaveAI">保存</button></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>登录密码</h2></div>
+        <div class="two">
+          <label class="field"><span class="field-label">当前密码</span><input type="password" id="pwCur" autocomplete="current-password"></label>
+          <label class="field"><span class="field-label">新密码 <em>至少 8 位</em></span><input type="password" id="pwNew" autocomplete="new-password"></label>
+        </div>
+        <div class="form-foot"><button class="btn secondary" id="btnChangePw">修改密码</button></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ============ 弹窗 ============ -->
+<dialog id="dlgPreview" class="dlg wide">
+  <div class="dlg-head"><div><h2>预览</h2><p class="muted" id="previewSub"></p></div>
+    <button class="icon-btn" data-close aria-label="关闭"><svg><use href="#i-close"/></svg></button></div>
+  <div class="tabs" id="previewTabs"></div>
+  <div class="preview-meta" id="previewMeta"></div>
+  <pre class="code" id="previewBody"></pre>
+  <div class="dlg-foot"><button class="btn ghost" data-close>关闭</button>
+    <button class="btn primary" id="btnPublishFromPreview"><svg><use href="#i-send"/></svg>确认发布</button></div>
+</dialog>
+
+<dialog id="dlgConfirm" class="dlg">
+  <h2 id="confirmTitle"></h2>
+  <p class="muted" id="confirmText"></p>
+  <label class="switch hidden" id="confirmOverwrite"><input type="checkbox"><span class="track"></span><span>目标文件已存在时覆盖</span></label>
+  <div class="dlg-foot"><button class="btn ghost" data-close>取消</button><button class="btn primary" id="confirmOk">确定</button></div>
+</dialog>
+
+<dialog id="dlgBlog" class="dlg wide">
+  <form id="blogForm" novalidate>
+    <div class="dlg-head"><h2 id="blogFormTitle">添加博客</h2>
+      <button type="button" class="icon-btn" data-close aria-label="关闭"><svg><use href="#i-close"/></svg></button></div>
+    <label class="field"><span class="field-label">主题预设 <em>决定 front matter 字段和正文处理</em></span><select id="f_adapter"></select></label>
+    <div class="two">
+      <label class="field"><span class="field-label">显示名</span><input type="text" id="f_name" placeholder="My Blog"></label>
+      <label class="field"><span class="field-label">ID <em>保存后不能改</em></span><input type="text" id="f_id" spellcheck="false" placeholder="my-blog"></label>
+      <label class="field"><span class="field-label">源码仓库</span><input type="text" id="f_repo" spellcheck="false" placeholder="owner/my-blog-source"></label>
+      <label class="field"><span class="field-label">分支 <em>测试用 postflow-test 不触发部署</em></span><input type="text" id="f_branch" value="main" spellcheck="false"></label>
+      <label class="field"><span class="field-label">文章目录</span><input type="text" id="f_posts_dir" spellcheck="false"></label>
+      <label class="field"><span class="field-label">文件名</span><input type="text" id="f_filename" value="{slug}.md" spellcheck="false"></label>
+    </div>
+    <div class="secret">
+      <label class="field"><span class="field-label">专用 GitHub Token <em>仓库在别的 GitHub 账号时填；留空 = 用全局 Token</em> <span class="badge" id="f_token_state"></span></span>
+        <input type="password" id="f_token" autocomplete="off" spellcheck="false" placeholder="这个账号的 fine-grained PAT：该仓库 Contents 读写 + Actions 只读"></label>
+      <button type="button" class="btn danger-ghost sm hidden" id="btnClearBlogToken">改用全局</button>
+    </div>
+    <details class="adv">
+      <summary>高级：文章链接、分类目录、覆盖预设</summary>
+      <label class="field"><span class="field-label">文章链接模板 <em>可选，发布后显示链接</em></span>
+        <input type="text" id="f_post_url" spellcheck="false" placeholder="https://blog.example.com/{year}/{month}/{day}/{slug}/"></label>
+      <div class="two">
+        <label class="field"><span class="field-label">分类 → 子目录 <em>每行「分类: 目录」</em></span>
+          <textarea id="f_category_dirs" rows="4" class="mono" placeholder="ChatGPT: chatgpt&#10;Claude: claude"></textarea></label>
+        <label class="field"><span class="field-label">默认子目录</span><input type="text" id="f_default_category_dir" placeholder="ai">
+          <span class="hint">文件名里用了 {category_dir} 时必填</span></label>
+      </div>
+      <label class="field"><span class="field-label">覆盖预设（YAML）<em>如 date_format、fields</em></span>
+        <textarea id="f_options" rows="4" class="mono" placeholder="date_format: '%Y-%m-%d'"></textarea></label>
+      <p class="hint">占位符：{slug} {year} {month} {day} {category_dir}</p>
+    </details>
+    <p class="form-error" id="blogMsg" role="alert"></p>
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-close>取消</button><button class="btn primary" id="btnSaveBlog" type="submit">保存</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlgHelp" class="drawer">
+  <div class="drawer-head"><h2>帮助</h2><button class="icon-btn" data-close aria-label="关闭"><svg><use href="#i-close"/></svg></button></div>
+  <div class="tabs" id="helpTabs"><button data-t="start" class="on">快速上手</button><button data-t="keys">快捷键</button><button data-t="faq">常见问题</button></div>
+  <div class="drawer-body">
+    <div data-panel="start">
+      <ol class="steps">
+        <li><b>配置一次</b><p>「设置」里填 GitHub Token（fine-grained，目标仓库 Contents 读写 + Actions 只读），再添加博客：选主题预设，填仓库、分支、文章目录。点「检查连接」确认能写。</p></li>
+        <li><b>粘贴正文</b><p>把公众号文章的 Markdown 粘进「正文」，或直接把 .md 文件拖进来。正文会自动存为本地草稿，刷新不丢。</p></li>
+        <li><b>补全元数据</b><p>先填标题（你定的标题，AI 不会改），再点「AI 生成网址、描述、关键词」：网址用英文提炼标题的核心主题（如 python-314-free-threading-template-strings-upgrade），描述是 100–130 字的中国搜索版，关键词 15–30 个覆盖同义说法和长尾问题；标签、分类自己填。</p></li>
+        <li><b>预览</b><p>按博客分标签看最终生成的 Markdown 和落盘路径；目标文件已存在会提示，需要打开「覆盖」。</p></li>
+        <li><b>发布</b><p>一次提交到所有勾选的博客，各仓库的 GitHub Actions 自动构建部署。结果卡片会自动刷新，直到部署完成。</p></li>
+      </ol>
+      <p class="help-note">新博客先把分支填 <code>postflow-test</code> 试发，确认内容没问题再改回 <code>main</code>，不会影响线上站点。</p>
+    </div>
+    <div data-panel="keys" class="hidden">
+      <table class="keys">
+        <tr><td>预览</td><td><kbd class="mod">⌘</kbd> <kbd>Enter</kbd></td></tr>
+        <tr><td>发布</td><td><kbd class="mod">⌘</kbd> <kbd>Shift</kbd> <kbd>Enter</kbd></td></tr>
+        <tr><td>按纯文本粘贴（不转换格式）</td><td><kbd class="mod">⌘</kbd> <kbd>Shift</kbd> <kbd>V</kbd></td></tr>
+        <tr><td>打开帮助</td><td><kbd>?</kbd></td></tr>
+        <tr><td>关闭弹窗</td><td><kbd>Esc</kbd></td></tr>
+      </table>
+    </div>
+    <div data-panel="faq" class="faq hidden">
+      <details><summary>发布失败：还没配置 GitHub Token</summary><p>去「设置 → GitHub」填 Token 并保存。Token 只存在服务器本地数据库，页面上只显示末 4 位。</p></details>
+      <details><summary>GitHub 401 / 403 / 404</summary><p>401 是 Token 无效或过期；403 是 Token 没有这个仓库的写权限；404 多半是仓库名写错，或 fine-grained Token 没勾选这个仓库。在「设置」里点该博客的「检查连接」可以看到具体原因。</p></details>
+      <details><summary>三个博客在不同 GitHub 账号，Token 怎么配？</summary><p>每个博客是独立的仓库，可以属于不同账号。fine-grained Token 只能授权给一个账号下的仓库，所以：多数博客所在账号的 Token 填在「设置 → 密钥」作为全局默认；其他账号下的博客，编辑该博客，在「专用 GitHub Token」里填那个账号的 Token。检查连接、预览、发布、查部署状态都会自动用对应的 Token。</p></details>
+      <details><summary>从飞书、公众号复制的内容怎么变成 Markdown？</summary><p>直接复制、粘贴进「正文」就行：标题、加粗、列表、引用、代码块、表格、链接、图片会自动转成 Markdown，转错了按 ⌘Z 撤销；想原样粘贴纯文本按 ⌘⇧V。注意：飞书文档里的图片链接要登录才能看，公众号图片有防盗链，这两种图片发布前要换成图床链接，粘贴时会提醒。</p></details>
+      <details><summary>以前发的文章怎么改、怎么删？</summary><p>顶部「文章」页会列出博客仓库里的全部文章。点「编辑」载入到写作页，改完发布会写回原文件，只改你动过的部分，没动的字段（包括自定义字段）原样保留。点「删除」会从仓库删掉这篇，并在同一次提交里登记到放行名单，部署不会被 SEO 守门拦下。已被收录的文章尽量只改不删，删了老链接会 404。</p></details>
+      <details><summary>提示「目标文件已存在」</summary><p>同一个 slug 已经发过。确认要更新就打开「目标文件已存在时覆盖」再发；不想覆盖就换一个 slug。</p></details>
+      <details><summary>已提交，但网站没更新</summary><p>提交后由各仓库的 GitHub Actions 构建部署，通常 1～3 分钟。结果卡片里点 Actions 链接可以看日志；失败多是 workflow 或部署密钥的问题，不是本服务。</p></details>
+      <details><summary>生成的 front matter 和我的主题对不上</summary><p>编辑该博客 → 换一个更接近的主题预设；还有出入就在「高级 → 覆盖预设」里写 YAML，比如 <code>date_format: '%Y-%m-%d'</code>，或用 <code>fields</code> 重新定义字段（取值写 <code>$title</code>、<code>$tags</code>、<code>$cover</code> 等）。改完先预览。</p></details>
+      <details><summary>AI 用中转站怎么配？</summary><p>「设置 → AI 接口」：中转站是 Anthropic 格式（如 Claude Code 用的那种）就选「Anthropic 格式」，接口地址填中转站给的地址；是 OpenAI 格式（DeepSeek、Kimi、OpenRouter、各种 API 聚合）就选「OpenAI 兼容格式」，地址一般填到 <code>/v1</code>。填好 Key 和模型名，先点「测试连接」，通过了再保存。</p></details>
+      <details><summary>AI 生成失败</summary><p>先去「设置 → AI 接口」点「测试连接」看具体原因：401 是 Key 不对，404 多半是接口地址或模型名不对，429 是额度或限流。AI 只是辅助，失败了手动填写一样能发布。</p></details>
+      <details><summary>后来新加了博客，旧文章怎么补发？</summary><p>「历史」里每条记录会出现「补发 N 个」，用当时保存的内容生成并提交。想先改内容，就点「载入编辑」。</p></details>
+      <details><summary>草稿存在哪？</summary><p>只存在当前浏览器本地。换设备、清除网站数据都会丢失，重要文章请自己留底。</p></details>
+    </div>
+  </div>
+</dialog>
+
+<div id="toasts" class="toasts" aria-live="polite"></div>
+<script src="/static/fx.js"></script>
+<script src="/static/html2md.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>

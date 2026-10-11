@@ -1,0 +1,63 @@
+name: deploy
+
+# VuePress 2 → GitHub Pages（另一个仓库）。Secret：DEPLOY_KEY（线上仓库的 Deploy key 私钥，允许写）
+# 影子模式：默认只构建 + 与线上逐页比对，不部署。
+# 比对报告在 Actions 运行页面的 Summary。确认无误后，在仓库 Settings → Secrets and variables → Actions → Variables
+# 新建 DEPLOY_ENABLED=true 才会真正部署（且只部署 main 分支）；部署前比对仍会运行，出现阻断项（页面消失、CNAME/robots 变化）就不部署。
+# 故意删文章：把页面写进 .github/allowed-removals.txt（Postflow 删除文章时自动追加）。
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+env:
+  TZ: Asia/Shanghai
+  LIVE_REPO: <owner>/<owner>.github.io   # 线上站点仓库（GitHub Pages）
+  CNAME: docs.example.com                # 自定义域名；没有就删掉下面的 cname 一行
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # lastUpdated 依赖 git 历史
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      # 若 npm ci 因 peer 冲突失败：仓库根加 .npmrc（legacy-peer-deps=true）并提交
+      - run: npm ci
+      - run: npx vuepress build docs
+      - name: 拉取线上站点
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.LIVE_REPO }}
+          ref: master
+          ssh-key: ${{ secrets.DEPLOY_KEY }}
+          path: .live
+      - name: 与线上比对（SEO 守门）
+        run: python3 .github/scripts/compare_site.py .live ./docs/.vuepress/dist .github/allowed-removals.txt
+      - name: 保存构建产物（可下载核对，保留 7 天）
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: |
+            ./docs/.vuepress/dist
+            compare-report.json
+          retention-days: 7
+      - name: 部署
+        if: vars.DEPLOY_ENABLED == 'true' && github.ref == 'refs/heads/main'   # 只有 main 能上线；测试分支手动运行也不部署
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          deploy_key: ${{ secrets.DEPLOY_KEY }}
+          external_repository: ${{ env.LIVE_REPO }}
+          publish_branch: master
+          publish_dir: ./docs/.vuepress/dist
+          cname: ${{ env.CNAME }}
+          force_orphan: true

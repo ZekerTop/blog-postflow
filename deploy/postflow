@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+# Postflow 服务器运维命令（安装到 /usr/local/bin/postflow）。用法：postflow <命令>
+#   status       运行状态 + 健康检查
+#   logs [N]     最近 N 行日志（默认 100）
+#   restart      重启
+#   backup       立即备份数据库（每天 03:30 自动执行，保留 14 天）
+#   setup-code   首次使用的初始化码（设置密码后失效）
+#   update       用 /opt/postflow/image.tar.gz 换新版本（失败自动回滚）
+#   cert-renew   续期 HTTPS 证书（每天自动执行，到期前 30 天才真正续）
+set -euo pipefail
+NAME=postflow; BASE=/opt/postflow; DATA=$BASE/data; PORT=127.0.0.1:8790
+# 按实际修改：域名、ACME webroot、nginx 可执行文件
+DOMAIN=${POSTFLOW_DOMAIN:-postflow.example.com}; WEBROOT=${POSTFLOW_WEBROOT:-/var/www/postflow-acme}; NGINX=${POSTFLOW_NGINX:-nginx}
+
+run_container() {  # $1 = 镜像
+  docker run -d --name $NAME --restart unless-stopped \
+    -p $PORT:8000 -v $DATA:/data -v /etc/localtime:/etc/localtime:ro \
+    --read-only --tmpfs /tmp:size=16m,mode=1777 \
+    --cap-drop ALL --security-opt no-new-privileges \
+    --memory 384m --memory-swap 384m --pids-limit 128 \
+    --log-opt max-size=10m --log-opt max-file=3 \
+    "$1" >/dev/null
+}
+
+healthy() {
+  for _ in $(seq 1 30); do
+    curl -fs -o /dev/null --max-time 3 "http://$PORT/api/setup" 2>/dev/null && return 0
+    sleep 1
+  done
+  return 1
+}
+
+case "${1:-status}" in
+  status)
+    docker ps -a --filter name=^/$NAME$ --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}'
+    curl -fsS -o /dev/null -w "本机检查: HTTP %{http_code}\n" --max-time 5 "http://$PORT/api/setup" || echo "本机检查: 失败"
+    curl -fsS -o /dev/null -w "外网 HTTPS: HTTP %{http_code}\n" --max-time 10 "https://$DOMAIN/" || echo "外网 HTTPS: 失败"
+    ;;
+  logs) docker logs --tail "${2:-100}" $NAME ;;
+  restart) docker restart $NAME >/dev/null && healthy && echo "已重启，运行正常" ;;
+  backup)
+    mkdir -p $DATA/backups && chown 10001:10001 $DATA/backups && chmod 700 $DATA/backups  # 容器里以 uid 10001 写
+    f=backups/postflow-$(date +%Y%m%d-%H%M%S).db
+    docker exec $NAME python -c "import sqlite3; s=sqlite3.connect('/data/postflow.db'); d=sqlite3.connect('/data/$f'); s.backup(d); d.close()"
+    chmod 600 $DATA/$f
+    find $DATA/backups -name 'postflow-*.db' -mtime +14 -delete
+    echo "已备份：$DATA/$f"
+    ;;
+  setup-code)
+    if [ -s $DATA/setup-code.txt ]; then echo "初始化码：$(cat $DATA/setup-code.txt)（打开 https://$DOMAIN 用它设置登录密码）"
+    else echo "已经设置过密码，没有初始化码"; fi
+    ;;
+  update)
+    [ -f $BASE/image.tar.gz ] || { echo "缺少 $BASE/image.tar.gz"; exit 1; }
+    docker load -i $BASE/image.tar.gz >/dev/null
+    old=$(docker inspect -f '{{.Config.Image}}' $NAME 2>/dev/null || true)
+    [ -n "$old" ] && docker tag "$old" postflow:previous 2>/dev/null || true
+    "$0" backup >/dev/null 2>&1 || true
+    docker rm -f $NAME >/dev/null 2>&1 || true
+    run_container postflow:latest
+    if healthy; then echo "更新完成，运行正常"; rm -f $BASE/image.tar.gz
+    else
+      echo "新版本启动失败，回滚到上一个版本"; docker logs --tail 30 $NAME || true
+      docker rm -f $NAME >/dev/null; run_container postflow:previous; healthy && echo "已回滚"; exit 1
+    fi
+    ;;
+  start) run_container postflow:latest && healthy && echo "已启动" ;;
+  cert-renew)
+    docker run --rm -v $BASE/acme:/acme.sh -v $WEBROOT:/webroot neilpang/acme.sh:latest --cron >/dev/null 2>&1 || true
+    src=$BASE/acme/${DOMAIN}_ecc
+    if ! cmp -s $src/fullchain.cer $BASE/cert/fullchain.pem 2>/dev/null; then
+      install -m 600 $src/$DOMAIN.key $BASE/cert/privkey.pem
+      install -m 644 $src/fullchain.cer $BASE/cert/fullchain.pem
+      $NGINX -t >/dev/null 2>&1 && $NGINX -s reload && echo "证书已更新并重载 nginx"
+    fi
+    ;;
+  *) sed -n '2,10p' "$0"; exit 1 ;;
+esac
